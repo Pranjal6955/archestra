@@ -4,7 +4,6 @@ import type { UIMessage } from "@ai-sdk/react";
 import { Pencil, X, Check } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Message, MessageContent } from "@/components/ai-elements/message";
-import { Response } from "@/components/ai-elements/response";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
