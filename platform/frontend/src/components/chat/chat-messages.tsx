@@ -21,11 +21,16 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
+import { EditableMessage } from "@/components/chat/editable-message";
+import { useUpdateMessage, useDeleteMessagesAfter } from "@/lib/chat.query";
 
 interface ChatMessagesProps {
   messages: UIMessage[];
   hideToolCalls?: boolean;
   status: ChatStatus;
+  conversationId?: string;
+  onMessageEdit?: (messageId: string, newText: string) => void;
+  sendMessage?: (message: { role: "user"; parts: Array<{ type: "text"; text: string }> }) => void;
 }
 
 // Type guards for tool parts
@@ -52,8 +57,67 @@ export function ChatMessages({
   messages,
   hideToolCalls = false,
   status,
+  conversationId,
+  onMessageEdit,
+  sendMessage,
 }: ChatMessagesProps) {
   const isStreamingStalled = useStreamingStallDetection(messages, status);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const updateMessageMutation = useUpdateMessage();
+  const deleteMessagesAfterMutation = useDeleteMessagesAfter();
+
+  // Find the index of the message being edited
+  const editingMessageIndex = editingMessageId
+    ? messages.findIndex((m) => m.id === editingMessageId)
+    : -1;
+
+  const handleStartEdit = (messageId: string) => {
+    setEditingMessageId(messageId);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+  };
+
+  const handleSaveEdit = async (messageId: string, newText: string) => {
+    const message = messages.find((m) => m.id === messageId);
+    if (!message) return;
+
+    // Update the message content
+    const updatedContent = {
+      ...message,
+      parts: message.parts.map((part) =>
+        part.type === "text" ? { ...part, text: newText } : part,
+      ),
+    };
+
+    try {
+      // Update message in database
+      await updateMessageMutation.mutateAsync({
+        id: messageId,
+        content: updatedContent,
+      });
+
+      // If it's a user message, delete messages after and regenerate
+      if (message.role === "user" && sendMessage) {
+        // Delete messages after this one
+        await deleteMessagesAfterMutation.mutateAsync(messageId);
+
+        // Regenerate by sending the updated message
+        sendMessage({
+          role: "user",
+          parts: [{ type: "text", text: newText }],
+        });
+      } else if (onMessageEdit) {
+        // For assistant messages, just call the callback
+        onMessageEdit(messageId, newText);
+      }
+
+      setEditingMessageId(null);
+    } catch (error) {
+      console.error("Failed to save message edit:", error);
+    }
+  };
 
   if (messages.length === 0) {
     return (
@@ -67,51 +131,90 @@ export function ChatMessages({
     <Conversation className="h-full">
       <ConversationContent>
         <div className="max-w-4xl mx-auto">
-          {messages.map((message, idx) => (
-            <div key={message.id || idx}>
-              {message.parts.map((part, i) => {
-                // Skip tool result parts that immediately follow a tool invocation with same toolCallId
-                if (
-                  isToolPart(part) &&
-                  part.state === "output-available" &&
-                  i > 0
-                ) {
-                  const prevPart = message.parts[i - 1];
+          {messages.map((message, idx) => {
+            // Hide messages below the one being edited (for user messages)
+            const shouldHide =
+              editingMessageId &&
+              editingMessageIndex >= 0 &&
+              idx > editingMessageIndex;
+
+            if (shouldHide) {
+              return null;
+            }
+
+            return (
+              <div key={message.id || idx}>
+                {message.parts.map((part, i) => {
+                  // Skip tool result parts that immediately follow a tool invocation with same toolCallId
                   if (
-                    isToolPart(prevPart) &&
-                    prevPart.state === "input-available" &&
-                    prevPart.toolCallId === part.toolCallId
+                    isToolPart(part) &&
+                    part.state === "output-available" &&
+                    i > 0
+                  ) {
+                    const prevPart = message.parts[i - 1];
+                    if (
+                      isToolPart(prevPart) &&
+                      prevPart.state === "input-available" &&
+                      prevPart.toolCallId === part.toolCallId
+                    ) {
+                      return null;
+                    }
+                  }
+
+                  // Hide tool calls if hideToolCalls is true
+                  if (
+                    hideToolCalls &&
+                    isToolPart(part) &&
+                    (part.type?.startsWith("tool-") ||
+                      part.type === "dynamic-tool")
                   ) {
                     return null;
                   }
-                }
 
-                // Hide tool calls if hideToolCalls is true
-                if (
-                  hideToolCalls &&
-                  isToolPart(part) &&
-                  (part.type?.startsWith("tool-") ||
-                    part.type === "dynamic-tool")
-                ) {
-                  return null;
-                }
-
-                switch (part.type) {
-                  case "text":
-                    return (
-                      <Fragment key={`${message.id}-${i}`}>
-                        <Message from={message.role}>
-                          <MessageContent>
-                            {message.role === "system" && (
-                              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                System Prompt
-                              </div>
-                            )}
-                            <Response>{part.text}</Response>
-                          </MessageContent>
-                        </Message>
-                      </Fragment>
-                    );
+                  switch (part.type) {
+                    case "text":
+                      const isEditing = editingMessageId === message.id;
+                      // Only allow editing if message has an ID (saved to DB)
+                      const canEdit = !!message.id;
+                      return (
+                        <Fragment key={`${message.id}-${i}`}>
+                          {canEdit ? (
+                            <EditableMessage
+                              message={message}
+                              messageIndex={idx}
+                              isEditing={isEditing}
+                              onStartEdit={() =>
+                                message.id && handleStartEdit(message.id)
+                              }
+                              onCancelEdit={handleCancelEdit}
+                              onSaveEdit={(text) =>
+                                message.id && handleSaveEdit(message.id, text)
+                              }
+                              hideMessagesBelow={
+                                isEditing && message.role === "user"
+                              }
+                            >
+                              {message.role === "system" && (
+                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                  System Prompt
+                                </div>
+                              )}
+                              <Response>{part.text}</Response>
+                            </EditableMessage>
+                          ) : (
+                            <Message from={message.role}>
+                              <MessageContent>
+                                {message.role === "system" && (
+                                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                    System Prompt
+                                  </div>
+                                )}
+                                <Response>{part.text}</Response>
+                              </MessageContent>
+                            </Message>
+                          )}
+                        </Fragment>
+                      );
 
                   case "reasoning":
                     return (

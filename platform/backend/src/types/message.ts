@@ -1,4 +1,4 @@
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema, createUpdateSchema } from "drizzle-zod";
 import type { z } from "zod";
 import { schema } from "@/database";
 
@@ -9,6 +9,12 @@ export const InsertMessageSchema = createInsertSchema(
   id: true,
   createdAt: true,
 });
+export const UpdateMessageSchema = createUpdateSchema(schema.messagesTable).omit({
+  id: true,
+  conversationId: true,
+  createdAt: true,
+});
 
 export type Message = z.infer<typeof SelectMessageSchema>;
 export type InsertMessage = z.infer<typeof InsertMessageSchema>;
+export type UpdateMessage = z.infer<typeof UpdateMessageSchema>;

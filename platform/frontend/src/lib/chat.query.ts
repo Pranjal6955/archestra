@@ -155,3 +155,59 @@ export function useChatProfileMcpTools(agentId: string | undefined) {
     gcTime: 10 * 60 * 1000,
   });
 }
+
+export function useUpdateMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      content,
+    }: {
+      id: string;
+      content: any; // UIMessage content
+    }) => {
+      const response = await fetch(`/api/chat/messages/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ content }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update message");
+      }
+      const { data } = await response.json();
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate all conversation queries to refresh messages
+      queryClient.invalidateQueries({ queryKey: ["conversation"] });
+    },
+  });
+}
+
+export function useDeleteMessagesAfter() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      const response = await fetch(`/api/chat/messages/${messageId}/after`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to delete messages");
+      }
+      const { data } = await response.json();
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate all conversation queries to refresh messages
+      queryClient.invalidateQueries({ queryKey: ["conversation"] });
+    },
+  });
+}

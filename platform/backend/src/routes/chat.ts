@@ -27,7 +27,9 @@ import {
   ErrorResponsesSchema,
   InsertConversationSchema,
   SelectConversationSchema,
+  SelectMessageSchema,
   UpdateConversationSchema,
+  UpdateMessageSchema,
   UuidIdSchema,
 } from "@/types";
 
@@ -600,6 +602,78 @@ The title should capture the main topic or theme of the conversation. Respond wi
         // Return the conversation without title update on error
         return reply.send(conversation);
       }
+    },
+  );
+
+  fastify.patch(
+    "/api/chat/messages/:id",
+    {
+      schema: {
+        operationId: RouteId.UpdateChatMessage,
+        description: "Update a message",
+        tags: ["Chat"],
+        params: z.object({ id: UuidIdSchema }),
+        body: UpdateMessageSchema,
+        response: constructResponseSchema(SelectMessageSchema),
+      },
+    },
+    async ({ params: { id }, body, user, organizationId }, reply) => {
+      // Get the message to verify it exists and belongs to user's organization
+      const message = await MessageModel.findById(id);
+      if (!message) {
+        throw new ApiError(404, "Message not found");
+      }
+
+      // Verify the conversation belongs to the user's organization
+      const conversation = await ConversationModel.findById(
+        message.conversationId,
+        user.id,
+        organizationId,
+      );
+      if (!conversation) {
+        throw new ApiError(404, "Message not found");
+      }
+
+      const updated = await MessageModel.update(id, body);
+      if (!updated) {
+        throw new ApiError(404, "Message not found");
+      }
+
+      return reply.send(updated);
+    },
+  );
+
+  fastify.delete(
+    "/api/chat/messages/:id/after",
+    {
+      schema: {
+        operationId: RouteId.DeleteChatMessagesAfter,
+        description: "Delete all messages after a specific message",
+        tags: ["Chat"],
+        params: z.object({ id: UuidIdSchema }),
+        response: constructResponseSchema(DeleteObjectResponseSchema),
+      },
+    },
+    async ({ params: { id }, user, organizationId }, reply) => {
+      // Get the message to verify it exists and belongs to user's organization
+      const message = await MessageModel.findById(id);
+      if (!message) {
+        throw new ApiError(404, "Message not found");
+      }
+
+      // Verify the conversation belongs to the user's organization
+      const conversation = await ConversationModel.findById(
+        message.conversationId,
+        user.id,
+        organizationId,
+      );
+      if (!conversation) {
+        throw new ApiError(404, "Message not found");
+      }
+
+      await MessageModel.deleteAfter(message.conversationId, id);
+
+      return reply.send({ success: true });
     },
   );
 };

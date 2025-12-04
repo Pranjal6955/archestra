@@ -309,6 +309,8 @@ export const RouteId = {
   DeleteChatConversation: "deleteChatConversation",
   GenerateChatConversationTitle: "generateChatConversationTitle",
   GetChatMcpTools: "getChatMcpTools",
+  UpdateChatMessage: "updateChatMessage",
+  DeleteChatMessagesAfter: "deleteChatMessagesAfter",
 
   // Chat Settings Routes
   GetChatSettings: "getChatSettings",

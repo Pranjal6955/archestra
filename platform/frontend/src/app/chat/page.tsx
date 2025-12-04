@@ -539,6 +539,27 @@ export default function ChatPage() {
               messages={messages}
               hideToolCalls={hideToolCalls}
               status={status}
+              conversationId={conversationId}
+              sendMessage={sendMessage}
+              onMessageEdit={async (messageId, newText) => {
+                // Update the message in the local state
+                if (setMessages) {
+                  setMessages(
+                    messages.map((msg) =>
+                      msg.id === messageId
+                        ? {
+                            ...msg,
+                            parts: msg.parts.map((part) =>
+                              part.type === "text"
+                                ? { ...part, text: newText }
+                                : part,
+                            ),
+                          }
+                        : msg,
+                    ),
+                  );
+                }
+              }}
             />
           </div>
 
