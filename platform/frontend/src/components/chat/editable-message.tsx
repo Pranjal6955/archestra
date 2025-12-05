@@ -1,8 +1,8 @@
 "use client";
 
 import type { UIMessage } from "@ai-sdk/react";
-import { Pencil, X, Check } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Check, Pencil, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,12 +20,12 @@ interface EditableMessageProps {
 
 export function EditableMessage({
   message,
-  messageIndex,
+  messageIndex: _messageIndex,
   isEditing,
   onStartEdit,
   onCancelEdit,
   onSaveEdit,
-  hideMessagesBelow,
+  hideMessagesBelow: _hideMessagesBelow,
   children,
 }: EditableMessageProps) {
   const [editText, setEditText] = useState("");
@@ -51,21 +51,24 @@ export function EditableMessage({
     }
   }, [isEditing]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (editText.trim()) {
       onSaveEdit(editText.trim());
     }
-  };
+  }, [editText, onSaveEdit]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      handleSave();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      onCancelEdit();
-    }
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        onCancelEdit();
+      }
+    },
+    [handleSave, onCancelEdit],
+  );
 
   if (isEditing) {
     return (
@@ -135,4 +138,3 @@ export function EditableMessage({
     </Message>
   );
 }
-

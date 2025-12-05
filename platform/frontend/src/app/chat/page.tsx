@@ -359,6 +359,27 @@ export default function ChatPage() {
     [sendMessage, status],
   );
 
+  const handleMessageEdit = useCallback(
+    async (messageId: string, newText: string) => {
+      // Update the message in the local state
+      if (setMessages) {
+        setMessages(
+          messages.map((msg) =>
+            msg.id === messageId
+              ? {
+                  ...msg,
+                  parts: msg.parts.map((part) =>
+                    part.type === "text" ? { ...part, text: newText } : part,
+                  ),
+                }
+              : msg,
+          ),
+        );
+      }
+    },
+    [messages, setMessages],
+  );
+
   // If API key is not configured, show setup message
   if (chatSettings && !chatSettings.anthropicApiKeySecretId) {
     return (
@@ -541,25 +562,8 @@ export default function ChatPage() {
               status={status}
               conversationId={conversationId}
               sendMessage={sendMessage}
-              onMessageEdit={async (messageId, newText) => {
-                // Update the message in the local state
-                if (setMessages) {
-                  setMessages(
-                    messages.map((msg) =>
-                      msg.id === messageId
-                        ? {
-                            ...msg,
-                            parts: msg.parts.map((part) =>
-                              part.type === "text"
-                                ? { ...part, text: newText }
-                                : part,
-                            ),
-                          }
-                        : msg,
-                    ),
-                  );
-                }
-              }}
+              onMessageEdit={handleMessageEdit}
+              setMessages={setMessages}
             />
           </div>
 

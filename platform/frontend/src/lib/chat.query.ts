@@ -1,5 +1,7 @@
+import type { UIMessage } from "@ai-sdk/react";
 import { archestraApiSdk } from "@shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const {
   getChatConversations,
@@ -9,7 +11,17 @@ const {
   updateChatConversation,
   deleteChatConversation,
   generateChatConversationTitle,
-} = archestraApiSdk;
+  updateChatMessage,
+  deleteChatMessagesAfter,
+} = archestraApiSdk as typeof archestraApiSdk & {
+  updateChatMessage: (options: {
+    path: { id: string };
+    body: { content: UIMessage };
+  }) => Promise<{ data: unknown; error: unknown }>;
+  deleteChatMessagesAfter: (options: {
+    path: { id: string };
+  }) => Promise<{ data: unknown; error: unknown }>;
+};
 
 export function useConversation(conversationId?: string) {
   return useQuery({
@@ -63,6 +75,10 @@ export function useCreateConversation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success("Conversation created successfully");
+    },
+    onError: () => {
+      toast.error("Failed to create conversation");
     },
   });
 }
@@ -85,11 +101,18 @@ export function useUpdateConversation() {
       if (error) throw new Error("Failed to update conversation");
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (
+      _data: unknown,
+      variables: { id: string; title?: string | null },
+    ) => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       queryClient.invalidateQueries({
         queryKey: ["conversation", variables.id],
       });
+      toast.success("Conversation updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update conversation");
     },
   });
 }
@@ -105,9 +128,13 @@ export function useDeleteConversation() {
       if (error) throw new Error("Failed to delete conversation");
       return data;
     },
-    onSuccess: (_, deletedId) => {
+    onSuccess: (_data: unknown, deletedId: string) => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       queryClient.removeQueries({ queryKey: ["conversation", deletedId] });
+      toast.success("Conversation deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete conversation");
     },
   });
 }
@@ -130,11 +157,18 @@ export function useGenerateConversationTitle() {
       if (error) throw new Error("Failed to generate conversation title");
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (
+      _data: unknown,
+      variables: { id: string; regenerate?: boolean },
+    ) => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       queryClient.invalidateQueries({
         queryKey: ["conversation", variables.id],
       });
+      toast.success("Conversation title generated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to generate conversation title");
     },
   });
 }
@@ -160,31 +194,23 @@ export function useUpdateMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      content,
-    }: {
-      id: string;
-      content: any; // UIMessage content
-    }) => {
-      const response = await fetch(`/api/chat/messages/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ content }),
+    mutationFn: async ({ id, content }: { id: string; content: UIMessage }) => {
+      const { data, error } = await updateChatMessage({
+        path: { id },
+        body: { content },
       });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to update message");
-      }
-      const { data } = await response.json();
+      if (error) throw new Error("Failed to update message");
       return data;
     },
     onSuccess: () => {
       // Invalidate all conversation queries to refresh messages
       queryClient.invalidateQueries({ queryKey: ["conversation"] });
+      toast.success("Message updated successfully");
+    },
+    onError: (error: Error) => {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update message";
+      toast.error(errorMessage);
     },
   });
 }
@@ -194,20 +220,21 @@ export function useDeleteMessagesAfter() {
 
   return useMutation({
     mutationFn: async (messageId: string) => {
-      const response = await fetch(`/api/chat/messages/${messageId}/after`, {
-        method: "DELETE",
-        credentials: "include",
+      const { data, error } = await deleteChatMessagesAfter({
+        path: { id: messageId },
       });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete messages");
-      }
-      const { data } = await response.json();
+      if (error) throw new Error("Failed to delete messages");
       return data;
     },
     onSuccess: () => {
       // Invalidate all conversation queries to refresh messages
       queryClient.invalidateQueries({ queryKey: ["conversation"] });
+      toast.success("Messages deleted successfully");
+    },
+    onError: (error: Error) => {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete messages";
+      toast.error(errorMessage);
     },
   });
 }
