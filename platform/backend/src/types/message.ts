@@ -9,10 +9,8 @@ export const InsertMessageSchema = createInsertSchema(
   id: true,
   createdAt: true,
 });
-export const UpdateMessageSchema = createUpdateSchema(schema.messagesTable).omit({
-  id: true,
-  conversationId: true,
-  createdAt: true,
+export const UpdateMessageSchema = createUpdateSchema(schema.messagesTable).pick({
+  content: true,
 });
 
 export type Message = z.infer<typeof SelectMessageSchema>;
