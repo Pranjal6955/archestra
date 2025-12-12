@@ -28,6 +28,7 @@ function createK8sPodInstance(
 
   // Create mock K8s API objects
   const mockK8sApi = {} as k8s.CoreV1Api;
+  const mockK8sAppsApi = {} as k8s.AppsV1Api;
   const mockK8sAttach = {} as Attach;
   const mockK8sLog = {} as Log;
 
@@ -44,6 +45,7 @@ function createK8sPodInstance(
   return new K8sPod(
     mockMcpServer,
     mockK8sApi,
+    mockK8sAppsApi,
     mockK8sAttach,
     mockK8sLog,
     "default",
@@ -588,6 +590,7 @@ describe("K8sPod.generatePodSpec", () => {
     environmentValues?: Record<string, string>,
   ): K8sPod {
     const mockK8sApi = {} as k8s.CoreV1Api;
+    const mockK8sAppsApi = {} as k8s.AppsV1Api;
     const mockK8sAttach = {} as k8s.Attach;
     const mockK8sLog = {} as k8s.Log;
     const namespace = "default";
@@ -595,6 +598,7 @@ describe("K8sPod.generatePodSpec", () => {
     return new K8sPod(
       mcpServer,
       mockK8sApi,
+      mockK8sAppsApi,
       mockK8sAttach,
       mockK8sLog,
       namespace,
@@ -760,11 +764,13 @@ describe("K8sPod.generatePodSpec", () => {
     };
 
     const mockK8sApi = {} as k8s.CoreV1Api;
+    const mockK8sAppsApi = {} as k8s.AppsV1Api;
     const mockK8sAttach = {} as k8s.Attach;
     const mockK8sLog = {} as k8s.Log;
     const k8sPod = new K8sPod(
       mcpServer,
       mockK8sApi,
+      mockK8sAppsApi,
       mockK8sAttach,
       mockK8sLog,
       "default",
@@ -1154,11 +1160,13 @@ describe("K8sPod.generatePodSpec", () => {
     };
 
     const mockK8sApi = {} as k8s.CoreV1Api;
+    const mockK8sAppsApi = {} as k8s.AppsV1Api;
     const mockK8sAttach = {} as k8s.Attach;
     const mockK8sLog = {} as k8s.Log;
     const k8sPod = new K8sPod(
       mcpServer,
       mockK8sApi,
+      mockK8sAppsApi,
       mockK8sAttach,
       mockK8sLog,
       "default",
@@ -1222,6 +1230,7 @@ describe("K8sPod.createK8sSecret", () => {
     return new K8sPod(
       mockMcpServer,
       mockK8sApi as k8s.CoreV1Api,
+      {} as k8s.AppsV1Api,
       {} as Attach,
       {} as Log,
       "default",
