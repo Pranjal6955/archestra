@@ -671,14 +671,18 @@ export default class K8sPod {
 
           // After migration, try to read the Deployment again
           try {
-            existingDeployment =
-              await this.k8sAppsApi.readNamespacedDeployment({
+            existingDeployment = await this.k8sAppsApi.readNamespacedDeployment(
+              {
                 name: this.deploymentName,
                 namespace: this.namespace,
-              });
+              },
+            );
           } catch (migrationError: any) {
             // Deployment still doesn't exist after migration attempt, we'll create it
-            if (migrationError?.code !== 404 && migrationError?.statusCode !== 404) {
+            if (
+              migrationError?.code !== 404 &&
+              migrationError?.statusCode !== 404
+            ) {
               throw migrationError;
             }
           }
@@ -753,9 +757,7 @@ export default class K8sPod {
           if (updatedPod?.status?.phase === "Running") {
             this.state = "running";
             await this.assignHttpPortIfNeeded(updatedPod);
-            logger.info(
-              `Deployment ${this.deploymentName} pod is now running`,
-            );
+            logger.info(`Deployment ${this.deploymentName} pod is now running`);
             return;
           }
         }
@@ -809,10 +811,11 @@ export default class K8sPod {
         httpPort,
       );
 
-      const createdDeployment = await this.k8sAppsApi.createNamespacedDeployment({
-        namespace: this.namespace,
-        body: deploymentSpec,
-      });
+      const _createdDeployment =
+        await this.k8sAppsApi.createNamespacedDeployment({
+          namespace: this.namespace,
+          body: deploymentSpec,
+        });
 
       logger.info(
         `Deployment ${this.deploymentName} created, waiting for pod to be ready`,
@@ -1102,9 +1105,7 @@ export default class K8sPod {
             namespace: this.namespace,
             body: deployment,
           });
-          logger.info(
-            `Scaled Deployment ${this.deploymentName} to 0 replicas`,
-          );
+          logger.info(`Scaled Deployment ${this.deploymentName} to 0 replicas`);
         }
 
         // Wait for pods to terminate
@@ -1246,10 +1247,7 @@ export default class K8sPod {
 
       return logs || "";
     } catch (error: unknown) {
-      logger.error(
-        { err: error },
-        `Failed to get logs for pod:`,
-      );
+      logger.error({ err: error }, `Failed to get logs for pod:`);
       if (error instanceof Error && error.message.includes("404")) {
         return "Pod not found";
       }
