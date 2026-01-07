@@ -205,6 +205,7 @@ export interface StreamAccumulatorState {
   responseId: string;
   model: string;
   text: string;
+  reasoning?: string;
   toolCalls: Array<{
     id: string;
     name: string;
@@ -398,6 +399,7 @@ export function createStreamAccumulatorState(): StreamAccumulatorState {
     responseId: "",
     model: "",
     text: "",
+    reasoning: "",
     toolCalls: [],
     rawToolCallEvents: [],
     usage: null,

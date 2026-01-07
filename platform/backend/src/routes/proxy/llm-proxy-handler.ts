@@ -232,28 +232,28 @@ export async function handleLLMProxy<
         // Streaming callbacks for dual LLM progress
         requestAdapter.isStreaming()
           ? () => {
-              reply.raw.write(
-                streamAdapter.formatTextDeltaSSE(
-                  "Analyzing with Dual LLM:\n\n",
-                ),
-              );
-            }
+            reply.raw.write(
+              streamAdapter.formatTextDeltaSSE(
+                "Analyzing with Dual LLM:\n\n",
+              ),
+            );
+          }
           : undefined,
         requestAdapter.isStreaming()
           ? (progress: {
-              question: string;
-              options: string[];
-              answer: string;
-            }) => {
-              const optionsText = progress.options
-                .map((opt: string, idx: number) => `  ${idx}: ${opt}`)
-                .join("\n");
-              reply.raw.write(
-                streamAdapter.formatTextDeltaSSE(
-                  `Question: ${progress.question}\nOptions:\n${optionsText}\nAnswer: ${progress.answer}\n\n`,
-                ),
-              );
-            }
+            question: string;
+            options: string[];
+            answer: string;
+          }) => {
+            const optionsText = progress.options
+              .map((opt: string, idx: number) => `  ${idx}: ${opt}`)
+              .join("\n");
+            reply.raw.write(
+              streamAdapter.formatTextDeltaSSE(
+                `Question: ${progress.question}\nOptions:\n${optionsText}\nAnswer: ${progress.answer}\n\n`,
+              ),
+            );
+          }
           : undefined,
       );
 
@@ -788,12 +788,26 @@ function handleError(
   extractErrorMessage: (error: unknown) => string,
   isStreaming: boolean,
 ): FastifyReply | never {
-  logger.error(error);
+  // Enhanced error logging for debugging
+  logger.error(
+    {
+      error,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStatus: error instanceof Error && "status" in error ? error.status : undefined,
+      errorStatusCode: error instanceof Error && "statusCode" in error ? error.statusCode : undefined,
+      errorStack: error instanceof Error ? error.stack : undefined,
+      errorResponseBody: error instanceof Error && "responseBody" in error ? error.responseBody : undefined,
+    },
+    "[LLMProxy] Error occurred during request handling"
+  );
 
   const statusCode =
     error instanceof Error && "status" in error
       ? (error.status as 400 | 403 | 404 | 429 | 500)
-      : 500;
+      : error instanceof Error && "statusCode" in error
+        ? (error.statusCode as 400 | 403 | 404 | 429 | 500)
+        : 500;
 
   const errorMessage = extractErrorMessage(error);
 

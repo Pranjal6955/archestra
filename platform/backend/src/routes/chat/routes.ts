@@ -82,7 +82,7 @@ async function getSmartDefaultModel(
           case "openai":
             return "gpt-4o";
           case "minimax":
-            return "MiniMax-M2";
+            return "MiniMax-M2.1";
         }
       }
     }
@@ -99,7 +99,7 @@ async function getSmartDefaultModel(
     return "gemini-2.5-pro";
   }
   if (config.chat.minimax.apiKey) {
-    return "MiniMax-M2";
+    return "MiniMax-M2.1";
   }
 
   // Check if Vertex AI is enabled - use Gemini without API key
@@ -226,10 +226,26 @@ const chatRoutes: FastifyPluginAsyncZod = async (fastify) => {
       });
 
       // Stream with AI SDK
+      const coreMessages = await convertToModelMessages(messages);
+
+      // Filter out system messages from core messages if we are providing a system prompt separately
+      const filteredMessages = systemPrompt
+        ? coreMessages.filter((m: any) => m.role !== "system")
+        : coreMessages;
+
+      // Ensure assistant messages don't have null content (can happen with some providers/proxies)
+      // Vercel AI SDK ModelMessage schema requires content to be string | Array
+      const sanitizedMessages = filteredMessages.map((m: any) => {
+        if (m.role === "assistant" && m.content === null) {
+          return { ...m, content: "" };
+        }
+        return m;
+      });
+
       // Build streamText config conditionally
       const streamTextConfig: Parameters<typeof streamText>[0] = {
         model,
-        messages: convertToModelMessages(messages),
+        messages: sanitizedMessages,
         tools: mcpTools,
         stopWhen: stepCountIs(20),
         onFinish: async ({ usage, finishReason }) => {

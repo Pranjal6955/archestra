@@ -41,8 +41,7 @@ type MiniMaxStreamChunk = MiniMax.Types.ChatCompletionChunk;
 // =============================================================================
 
 class MiniMaxRequestAdapter
-  implements LLMRequestAdapter<MiniMaxRequest, MiniMaxMessages>
-{
+  implements LLMRequestAdapter<MiniMaxRequest, MiniMaxMessages> {
   readonly provider = "minimax" as const;
   private request: MiniMaxRequest;
   private modifiedModel: string | null = null;
@@ -174,6 +173,8 @@ class MiniMaxRequestAdapter
       ...this.request,
       model: this.getModel(),
       messages,
+      // Enable reasoning split for M2.1 models to separate thinking from content
+      reasoning_split: this.getModel().includes("MiniMax-M2") ? true : this.request.reasoning_split,
     };
   }
 
@@ -304,8 +305,7 @@ class MiniMaxRequestAdapter
 // =============================================================================
 
 class MiniMaxResponseAdapter
-  implements LLMResponseAdapter<MiniMaxResponse>
-{
+  implements LLMResponseAdapter<MiniMaxResponse> {
   readonly provider = "minimax" as const;
   private response: MiniMaxResponse;
 
@@ -404,8 +404,7 @@ class MiniMaxResponseAdapter
 // =============================================================================
 
 class MiniMaxStreamAdapter
-  implements LLMStreamAdapter<MiniMaxStreamChunk, MiniMaxResponse>
-{
+  implements LLMStreamAdapter<MiniMaxStreamChunk, MiniMaxResponse> {
   readonly provider = "minimax" as const;
   readonly state: StreamAccumulatorState;
   private currentToolCallIndices = new Map<number, number>();
@@ -463,6 +462,19 @@ class MiniMaxStreamAdapter
     if (delta.content) {
       this.state.text += delta.content;
       sseData = `data: ${JSON.stringify(chunk)}\n\n`;
+    }
+
+    // Handle reasoning content
+    if (delta.reasoning_details) {
+      for (const detailed of delta.reasoning_details) {
+        if (detailed.text) {
+          this.state.reasoning = (this.state.reasoning || "") + detailed.text;
+          // If we haven't sent SSE data for this chunk yet, send it now
+          if (!sseData) {
+            sseData = `data: ${JSON.stringify(chunk)}\n\n`;
+          }
+        }
+      }
     }
 
     // Handle tool calls
@@ -586,13 +598,13 @@ class MiniMaxStreamAdapter
     const toolCalls =
       this.state.toolCalls.length > 0
         ? this.state.toolCalls.map((tc) => ({
-            id: tc.id,
-            type: "function" as const,
-            function: {
-              name: tc.name,
-              arguments: tc.arguments,
-            },
-          }))
+          id: tc.id,
+          type: "function" as const,
+          function: {
+            name: tc.name,
+            arguments: tc.arguments,
+          },
+        }))
         : undefined;
 
     return {
@@ -605,9 +617,12 @@ class MiniMaxStreamAdapter
           index: 0,
           message: {
             role: "assistant",
-            content: this.state.text || null,
+            content: this.state.text || "",
             refusal: null,
             tool_calls: toolCalls,
+            reasoning_details: this.state.reasoning
+              ? [{ text: this.state.reasoning }]
+              : undefined,
           },
           logprobs: null,
           finish_reason:
@@ -800,10 +815,22 @@ export const minimaxAdapterFactory: LLMProvider<
       ? getObservableFetch("minimax", options.agent, options.externalAgentId)
       : undefined;
 
+    const baseURL = options?.baseUrl;
+
+    logger.info(
+      {
+        hasApiKey: !!apiKey,
+        apiKeyLength: apiKey?.length,
+        baseURL,
+        hasFetch: !!customFetch,
+      },
+      "[MiniMax] Creating OpenAI-compatible client"
+    );
+
     // MiniMax is OpenAI-compatible, so we can use the OpenAI SDK
     return new OpenAIProvider({
       apiKey,
-      baseURL: options?.baseUrl,
+      baseURL,
       fetch: customFetch,
     });
   },
@@ -813,6 +840,19 @@ export const minimaxAdapterFactory: LLMProvider<
     request: MiniMaxRequest,
   ): Promise<MiniMaxResponse> {
     const openaiClient = client as OpenAIProvider;
+
+    logger.info(
+      {
+        model: request.model,
+        messageCount: request.messages.length,
+        toolsCount: request.tools?.length ?? 0,
+        stream: request.stream,
+        hasTemperature: request.temperature !== undefined,
+        hasMaxTokens: request.max_tokens !== undefined,
+      },
+      "[MiniMax] Executing OpenAI-compatible chat completion request"
+    );
+
     // MiniMax is OpenAI-compatible
     return openaiClient.chat.completions.create({
       ...request,

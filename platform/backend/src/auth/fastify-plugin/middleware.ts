@@ -9,7 +9,7 @@ import { ApiError } from "@/types";
 
 const { requiredEndpointPermissionsMap } = config.enterpriseLicenseActivated
   ? // biome-ignore lint/style/noRestrictedImports: conditional endpoint permissions
-    await import("@shared/access-control.ee")
+  await import("@shared/access-control.ee")
   : await import("@shared/access-control");
 
 export class Authnz {
@@ -99,6 +99,7 @@ export class Authnz {
       url.startsWith("/v1/openai") ||
       url.startsWith("/v1/anthropic") ||
       url.startsWith("/v1/gemini") ||
+      url.startsWith("/v1/minimax") ||
       url === "/openapi.json" ||
       url === "/health" ||
       url === "/api/features" ||

@@ -143,8 +143,7 @@ export function initializeMetrics(labelKeys: string[]): void {
   });
 
   logger.info(
-    `Metrics initialized with ${
-      nextLabelKeys.length
+    `Metrics initialized with ${nextLabelKeys.length
     } agent label keys: ${nextLabelKeys.join(", ")}`,
   );
 }
@@ -429,7 +428,7 @@ export function getObservableFetch(
         if (!data.usage) {
           return response;
         }
-        if (provider === "openai") {
+        if (provider === "openai" || provider === "minimax") {
           const { input, output } = utils.adapters.openai.getUsageTokens(
             data.usage,
           );
@@ -452,7 +451,7 @@ export function getObservableFetch(
             externalAgentId,
           );
         } else {
-          throw new Error("Unknown provider when logging usage token metrics");
+          throw new Error(`Unknown provider "${provider}" when logging usage token metrics`);
         }
       } catch (_parseError) {
         logger.error("Error parsing LLM response JSON for tokens");
@@ -527,8 +526,8 @@ export function getObservableGenAI(
       const duration = Math.round((Date.now() - startTime) / 1000);
       const statusCode =
         error instanceof Error &&
-        "status" in error &&
-        typeof error.status === "number"
+          "status" in error &&
+          typeof error.status === "number"
           ? error.status.toString()
           : "0";
 

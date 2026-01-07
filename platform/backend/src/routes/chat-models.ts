@@ -137,113 +137,139 @@ async function fetchOpenAiModels(apiKey: string): Promise<ModelInfo[]> {
  */
 async function fetchMiniMaxModels(apiKey: string): Promise<ModelInfo[]> {
   const baseUrl = config.chat.minimax.baseUrl;
-  
-  // First, try to fetch from /models endpoint
+
   try {
-    const url = `${baseUrl}/models`;
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-    });
+    // First, try to fetch from /models endpoint
+    try {
+      const url = `${baseUrl}/models`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
 
-    if (response.ok) {
-      const data = (await response.json()) as {
-        data?: Array<{
-          id: string;
-          created?: number;
-          owned_by?: string;
-        }>;
-      };
+      if (response.ok) {
+        const data = (await response.json()) as {
+          data?: Array<{
+            id: string;
+            created?: number;
+            owned_by?: string;
+          }>;
+        };
 
-      // If we got models, filter and return them
-      if (data.data && Array.isArray(data.data)) {
-        const filtered = data.data
-          .filter((model) => {
-            const id = model.id.toLowerCase();
-            return id.startsWith("minimax-");
-          })
-          .map((model) => ({
-            id: model.id,
-            displayName: model.id,
-            provider: "minimax" as const,
-            createdAt: model.created
-              ? new Date(model.created * 1000).toISOString()
-              : undefined,
-          }));
+        if (data.data && Array.isArray(data.data)) {
+          const filtered = data.data
+            .filter((model) => {
+              const id = model.id.toLowerCase();
+              return id.startsWith("minimax-") || id.startsWith("abab");
+            })
+            .map((model) => ({
+              id: model.id,
+              displayName: model.id,
+              provider: "minimax" as const,
+              createdAt: model.created
+                ? new Date(model.created * 1000).toISOString()
+                : undefined,
+            }));
 
-        // If we found models, return them
-        if (filtered.length > 0) {
-          return filtered;
+          if (filtered.length > 0) {
+            return filtered;
+          }
+        }
+      }
+    } catch (error) {
+      logger.debug({ error, baseUrl }, "MiniMax /models endpoint not available");
+    }
+
+    // Fallback: Test with chat completion using multiple possible models
+    const testModels = ["MiniMax-M2.1", "MiniMax-M2.1-lightning", "MiniMax-M2"];
+
+    for (const testModel of testModels) {
+      try {
+        const testUrl = `${baseUrl}/chat/completions`;
+        const testResponse = await fetch(testUrl, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: testModel,
+            messages: [{ role: "user", content: "test" }],
+            max_tokens: 1,
+          }),
+        });
+
+        if (testResponse.ok) {
+          return [
+            {
+              id: "MiniMax-M2.1",
+              displayName: "MiniMax-M2.1 (Programming/Reasoning)",
+              provider: "minimax" as const,
+            },
+            {
+              id: "MiniMax-M2.1-lightning",
+              displayName: "MiniMax-M2.1-lightning (Fast)",
+              provider: "minimax" as const,
+            },
+            {
+              id: "MiniMax-M2",
+              displayName: "MiniMax-M2 (Reasoning)",
+              provider: "minimax" as const,
+            },
+          ];
+        }
+
+        const errorText = await testResponse.text();
+
+        // If we get an "authorized_error" but it's 401, it's definitely an invalid key
+        if (testResponse.status === 401) {
+          throw new Error(`Invalid MiniMax API key: 401 ${errorText}`);
+        }
+
+        // If it's a "balance" error or "model" error (but not 401), the key is likely valid
+        if (
+          testResponse.status === 429 ||
+          testResponse.status === 402 ||
+          errorText.includes("balance") ||
+          errorText.includes("insufficient") ||
+          errorText.includes("model_not_found") ||
+          errorText.includes("permission_denied")
+        ) {
+          logger.info({ testModel, status: testResponse.status }, "MiniMax API key validated (via fallback error check)");
+          return [
+            {
+              id: "MiniMax-M2.1",
+              displayName: "MiniMax-M2.1 (Programming/Reasoning)",
+              provider: "minimax" as const,
+            },
+            {
+              id: "MiniMax-M2.1-lightning",
+              displayName: "MiniMax-M2.1-lightning (Fast)",
+              provider: "minimax" as const,
+            },
+            {
+              id: "MiniMax-M2",
+              displayName: "MiniMax-M2 (Reasoning)",
+              provider: "minimax" as const,
+            },
+          ];
+        }
+      } catch (error) {
+        logger.debug({ error, testModel, baseUrl }, "MiniMax test completion failed");
+        if (error instanceof Error && error.message.includes("401")) {
+          throw error; // Re-throw 401 promptly
         }
       }
     }
   } catch (error) {
-    // /models endpoint might not be available, continue to API key test
-    logger.debug({ error }, "MiniMax /models endpoint not available, testing with chat completion");
-  }
-
-  const testUrl = `${baseUrl}/chat/completions`;
-  const testResponse = await fetch(testUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "MiniMax-M2",
-      messages: [{ role: "user", content: "test" }],
-      max_tokens: 1,
-    }),
-  });
-
-  if (!testResponse.ok) {
-    const errorText = await testResponse.text();
-
-    // Check if it's an "insufficient balance" error
-    if (
-      (testResponse.status === 429 || testResponse.status === 402) &&
-      (errorText.includes("insufficient_balance") ||
-        errorText.includes("balance"))
-    ) {
-      logger.info("MiniMax API key validated (insufficient balance)");
-      return [
-        {
-          id: "MiniMax-M2",
-          displayName: "MiniMax-M2",
-          provider: "minimax" as const,
-        },
-        {
-          id: "MiniMax-M2.1",
-          displayName: "MiniMax-M2.1",
-          provider: "minimax" as const,
-        },
-      ];
+    if (error instanceof Error && error.message.includes("401")) {
+      throw error;
     }
-
-    logger.error(
-      { status: testResponse.status, error: errorText },
-      "Failed to validate MiniMax API key",
-    );
-    throw new Error(
-      `Invalid MiniMax API key: ${testResponse.status} ${errorText}`,
-    );
+    throw new Error(`Failed to connect to MiniMax API: ${(error as Error).message}`);
   }
 
-  // API key is valid, return known MiniMax models
-  // These are the models documented in MiniMax's API
-  return [
-    {
-      id: "MiniMax-M2",
-      displayName: "MiniMax-M2",
-      provider: "minimax" as const,
-    },
-    {
-      id: "MiniMax-M2.1",
-      displayName: "MiniMax-M2.1",
-      provider: "minimax" as const,
-    },
-  ];
+  throw new Error("Failed to connect to MiniMax API after multiple attempts");
 }
 
 /**

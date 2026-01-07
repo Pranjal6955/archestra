@@ -30,9 +30,17 @@ namespace MiniMax {
     export type Message = z.infer<typeof MiniMaxMessages.MessageParamSchema>;
     export type Role = Message["role"];
 
-    // Use OpenAI's ChatCompletionChunk type since MiniMax is OpenAI-compatible
+    // Use OpenAI's ChatCompletionChunk type but extend with MiniMax-specific fields
     export type ChatCompletionChunk =
-      OpenAIProvider.Chat.Completions.ChatCompletionChunk;
+      OpenAIProvider.Chat.Completions.ChatCompletionChunk & {
+        choices: Array<{
+          delta: {
+            reasoning_details?: Array<{
+              text: string;
+            }>;
+          };
+        }>;
+      };
   }
 }
 

@@ -16,6 +16,8 @@ export function getTokenizer(provider: SupportedProvider): Tokenizer {
       return new AnthropicTokenizer();
     case "openai":
       return new TiktokenTokenizer();
+    case "minimax":
+      return new TiktokenTokenizer(); // MiniMax is OpenAI-compatible
     default:
       // For any other provider including Gemini, use tiktoken as fallback
       return new TiktokenTokenizer();

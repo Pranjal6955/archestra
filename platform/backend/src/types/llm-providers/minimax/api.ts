@@ -51,6 +51,13 @@ const ChoiceSchema = z
           .nullable()
           .optional(),
         tool_calls: z.array(ToolCallSchema).optional(),
+        reasoning_details: z
+          .array(
+            z.object({
+              text: z.string(),
+            }),
+          )
+          .optional(),
       })
       .describe(`MiniMax OpenAI-compatible message structure`),
   })
@@ -65,6 +72,7 @@ export const ChatCompletionRequestSchema = z
     temperature: z.number().nullable().optional(),
     max_tokens: z.number().nullable().optional(),
     stream: z.boolean().nullable().optional(),
+    reasoning_split: z.boolean().optional(),
   })
   .describe(`MiniMax OpenAI-compatible chat completion request`);
 
