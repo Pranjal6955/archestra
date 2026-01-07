@@ -354,6 +354,334 @@ export type OpenAiChatCompletionResponseInput = {
     };
 };
 
+export type MiniMaxChatCompletionRequestInput = {
+    model: string;
+    /**
+     * MiniMax OpenAI-compatible message parameter
+     */
+    messages: Array<{
+        content: string | Array<{
+            type: 'text';
+            text: string;
+        }>;
+        role: 'developer';
+        name?: string;
+    } | {
+        content: string | Array<{
+            type: 'text';
+            text: string;
+        }>;
+        role: 'system';
+        name?: string;
+    } | {
+        content: string | Array<{
+            type: 'text';
+            text: string;
+        } | {
+            type: 'image_url';
+            /**
+             * MiniMax OpenAI-compatible image URL
+             */
+            image_url: {
+                url: string;
+                detail: 'auto' | 'low' | 'high';
+            };
+        } | {
+            type: 'input_audio';
+            /**
+             * MiniMax OpenAI-compatible audio input
+             */
+            input_audio: {
+                data: string;
+                format: 'wav' | 'mp3';
+            };
+        } | {
+            type: 'file';
+            /**
+             * MiniMax OpenAI-compatible file content part
+             */
+            file: {
+                file_data?: string;
+                file_id?: string;
+                filename?: string;
+            };
+        }>;
+        role: 'user';
+        name?: string;
+    } | {
+        role: 'assistant';
+        audio?: {
+            id: string;
+        } | unknown;
+        content?: string | Array<{
+            type: 'text';
+            text: string;
+        }> | Array<{
+            type: 'refusal';
+            refusal: string;
+        }> | unknown;
+        function_call?: {
+            arguments: string;
+            name: string;
+        } | unknown;
+        name?: string;
+        refusal?: string | unknown;
+        /**
+         * MiniMax OpenAI-compatible tool call structure
+         */
+        tool_calls?: Array<{
+            id: string;
+            type: 'function';
+            /**
+             * MiniMax OpenAI-compatible function tool call
+             */
+            function: {
+                arguments: string;
+                name: string;
+            };
+        } | {
+            id: string;
+            type: 'custom';
+            /**
+             * MiniMax OpenAI-compatible custom tool call
+             */
+            custom: {
+                input: string;
+                name: string;
+            };
+        }>;
+    } | {
+        role: 'tool';
+        content: string | Array<{
+            type: 'text';
+            text: string;
+        }>;
+        tool_call_id: string;
+    } | {
+        role: 'function';
+        content: string | unknown;
+        name: string;
+    }>;
+    /**
+     * MiniMax OpenAI-compatible tool definition
+     */
+    tools?: Array<{
+        type: 'function';
+        /**
+         * MiniMax OpenAI-compatible function definition
+         */
+        function: {
+            name: string;
+            description?: string;
+            /**
+             *
+             * MiniMax OpenAI-compatible function definition parameters.
+             * The parameters the functions accepts, described as a JSON Schema object.
+             *
+             */
+            parameters?: {
+                [key: string]: unknown;
+            };
+            strict?: boolean | unknown;
+        };
+    } | {
+        type: 'custom';
+        custom: {
+            /**
+             * The name of the custom tool, used to identify it in tool calls
+             */
+            name: string;
+            /**
+             * Optional description of the custom tool, used to provide more context
+             */
+            description?: string;
+            /**
+             * The input format for the custom tool. Default is unconstrained text.
+             */
+            format?: {
+                /**
+                 * Unconstrained text format. Always `text`
+                 */
+                type: 'text';
+            } | {
+                type: 'grammar';
+                /**
+                 * Your chosen grammar
+                 */
+                grammar: {
+                    /**
+                     * The grammar definition
+                     */
+                    definition: string;
+                    /**
+                     * The syntax of the grammar definition
+                     */
+                    syntax: 'lark' | 'regex';
+                };
+            };
+        };
+    }>;
+    /**
+     * MiniMax OpenAI-compatible tool choice option
+     */
+    tool_choice?: 'none' | 'auto' | 'required' | {
+        type: 'allowed_tools';
+        /**
+         * MiniMax OpenAI-compatible allowed tools schema
+         */
+        allowed_tools: {
+            /**
+             *
+             * Constrains the tools available to the model to a pre-defined set.
+             *
+             * auto allows the model to pick from among the allowed tools and generate a
+             * message.
+             *
+             * required requires the model to call one or more of the allowed tools.
+             *
+             */
+            mode: 'auto' | 'required';
+            /**
+             * A list of tool definitions that the model should be allowed to call
+             */
+            tools: Array<{
+                [key: string]: {
+                    type: 'function';
+                    /**
+                     * MiniMax OpenAI-compatible function definition
+                     */
+                    function: {
+                        name: string;
+                        description?: string;
+                        /**
+                         *
+                         * MiniMax OpenAI-compatible function definition parameters.
+                         * The parameters the functions accepts, described as a JSON Schema object.
+                         *
+                         */
+                        parameters?: {
+                            [key: string]: unknown;
+                        };
+                        strict?: boolean | unknown;
+                    };
+                };
+            }>;
+        };
+    } | {
+        type: 'function';
+        function: {
+            name: string;
+        };
+    } | {
+        type: 'custom';
+        custom: {
+            /**
+             * The name of the custom tool, used to identify it in tool calls
+             */
+            name: string;
+            /**
+             * Optional description of the custom tool, used to provide more context
+             */
+            description?: string;
+            /**
+             * The input format for the custom tool. Default is unconstrained text.
+             */
+            format?: {
+                /**
+                 * Unconstrained text format. Always `text`
+                 */
+                type: 'text';
+            } | {
+                type: 'grammar';
+                /**
+                 * Your chosen grammar
+                 */
+                grammar: {
+                    /**
+                     * The grammar definition
+                     */
+                    definition: string;
+                    /**
+                     * The syntax of the grammar definition
+                     */
+                    syntax: 'lark' | 'regex';
+                };
+            };
+        };
+    };
+    temperature?: number | unknown;
+    max_tokens?: number | unknown;
+    stream?: boolean | unknown;
+};
+
+export type MiniMaxChatCompletionResponseInput = {
+    id: string;
+    choices: Array<{
+        finish_reason: 'stop' | 'length' | 'tool_calls' | 'content_filter' | 'function_call';
+        index: number;
+        logprobs: unknown;
+        /**
+         * MiniMax OpenAI-compatible message structure
+         */
+        message: {
+            content: string | unknown;
+            refusal?: string | unknown;
+            role: 'assistant';
+            annotations?: Array<unknown>;
+            audio?: unknown;
+            function_call?: {
+                arguments: string;
+                name: string;
+            } | unknown;
+            /**
+             * MiniMax OpenAI-compatible tool call structure
+             */
+            tool_calls?: Array<{
+                id: string;
+                type: 'function';
+                /**
+                 * MiniMax OpenAI-compatible function tool call
+                 */
+                function: {
+                    arguments: string;
+                    name: string;
+                };
+            } | {
+                id: string;
+                type: 'custom';
+                /**
+                 * MiniMax OpenAI-compatible custom tool call
+                 */
+                custom: {
+                    input: string;
+                    name: string;
+                };
+            }>;
+        };
+    }>;
+    created: number;
+    model: string;
+    object: 'chat.completion';
+    server_tier?: string;
+    system_fingerprint?: string | unknown;
+    /**
+     * MiniMax OpenAI-compatible API usage information
+     */
+    usage?: {
+        completion_tokens: number;
+        prompt_tokens: number;
+        total_tokens: number;
+        /**
+         * MiniMax OpenAI-compatible API usage details for completion tokens
+         */
+        completion_tokens_details?: unknown;
+        /**
+         * MiniMax OpenAI-compatible API usage details for prompt tokens
+         */
+        prompt_tokens_details?: unknown;
+    };
+};
+
 export type GeminiGenerateContentRequestInput = {
     /**
      * The content of the current conversation with the model. For single-turn queries, this is a single instance. For multi-turn queries like chat, this is a repeated field that contains the conversation history and the latest request
@@ -1715,6 +2043,334 @@ export type OpenAiChatCompletionResponse = {
         completion_tokens_details?: unknown;
         /**
          * https://github.com/openai/openai-node/blob/master/src/resources/completions.ts#L173
+         */
+        prompt_tokens_details?: unknown;
+    };
+};
+
+export type MiniMaxChatCompletionRequest = {
+    model: string;
+    /**
+     * MiniMax OpenAI-compatible message parameter
+     */
+    messages: Array<{
+        content: string | Array<{
+            type: 'text';
+            text: string;
+        }>;
+        role: 'developer';
+        name?: string;
+    } | {
+        content: string | Array<{
+            type: 'text';
+            text: string;
+        }>;
+        role: 'system';
+        name?: string;
+    } | {
+        content: string | Array<{
+            type: 'text';
+            text: string;
+        } | {
+            type: 'image_url';
+            /**
+             * MiniMax OpenAI-compatible image URL
+             */
+            image_url: {
+                url: string;
+                detail: 'auto' | 'low' | 'high';
+            };
+        } | {
+            type: 'input_audio';
+            /**
+             * MiniMax OpenAI-compatible audio input
+             */
+            input_audio: {
+                data: string;
+                format: 'wav' | 'mp3';
+            };
+        } | {
+            type: 'file';
+            /**
+             * MiniMax OpenAI-compatible file content part
+             */
+            file: {
+                file_data?: string;
+                file_id?: string;
+                filename?: string;
+            };
+        }>;
+        role: 'user';
+        name?: string;
+    } | {
+        role: 'assistant';
+        audio?: {
+            id: string;
+        } | unknown;
+        content?: string | Array<{
+            type: 'text';
+            text: string;
+        }> | Array<{
+            type: 'refusal';
+            refusal: string;
+        }> | unknown;
+        function_call?: {
+            arguments: string;
+            name: string;
+        } | unknown;
+        name?: string;
+        refusal?: string | unknown;
+        /**
+         * MiniMax OpenAI-compatible tool call structure
+         */
+        tool_calls?: Array<{
+            id: string;
+            type: 'function';
+            /**
+             * MiniMax OpenAI-compatible function tool call
+             */
+            function: {
+                arguments: string;
+                name: string;
+            };
+        } | {
+            id: string;
+            type: 'custom';
+            /**
+             * MiniMax OpenAI-compatible custom tool call
+             */
+            custom: {
+                input: string;
+                name: string;
+            };
+        }>;
+    } | {
+        role: 'tool';
+        content: string | Array<{
+            type: 'text';
+            text: string;
+        }>;
+        tool_call_id: string;
+    } | {
+        role: 'function';
+        content: string | unknown;
+        name: string;
+    }>;
+    /**
+     * MiniMax OpenAI-compatible tool definition
+     */
+    tools?: Array<{
+        type: 'function';
+        /**
+         * MiniMax OpenAI-compatible function definition
+         */
+        function: {
+            name: string;
+            description?: string;
+            /**
+             *
+             * MiniMax OpenAI-compatible function definition parameters.
+             * The parameters the functions accepts, described as a JSON Schema object.
+             *
+             */
+            parameters?: {
+                [key: string]: unknown;
+            };
+            strict?: boolean | unknown;
+        };
+    } | {
+        type: 'custom';
+        custom: {
+            /**
+             * The name of the custom tool, used to identify it in tool calls
+             */
+            name: string;
+            /**
+             * Optional description of the custom tool, used to provide more context
+             */
+            description?: string;
+            /**
+             * The input format for the custom tool. Default is unconstrained text.
+             */
+            format?: {
+                /**
+                 * Unconstrained text format. Always `text`
+                 */
+                type: 'text';
+            } | {
+                type: 'grammar';
+                /**
+                 * Your chosen grammar
+                 */
+                grammar: {
+                    /**
+                     * The grammar definition
+                     */
+                    definition: string;
+                    /**
+                     * The syntax of the grammar definition
+                     */
+                    syntax: 'lark' | 'regex';
+                };
+            };
+        };
+    }>;
+    /**
+     * MiniMax OpenAI-compatible tool choice option
+     */
+    tool_choice?: 'none' | 'auto' | 'required' | {
+        type: 'allowed_tools';
+        /**
+         * MiniMax OpenAI-compatible allowed tools schema
+         */
+        allowed_tools: {
+            /**
+             *
+             * Constrains the tools available to the model to a pre-defined set.
+             *
+             * auto allows the model to pick from among the allowed tools and generate a
+             * message.
+             *
+             * required requires the model to call one or more of the allowed tools.
+             *
+             */
+            mode: 'auto' | 'required';
+            /**
+             * A list of tool definitions that the model should be allowed to call
+             */
+            tools: Array<{
+                [key: string]: {
+                    type: 'function';
+                    /**
+                     * MiniMax OpenAI-compatible function definition
+                     */
+                    function: {
+                        name: string;
+                        description?: string;
+                        /**
+                         *
+                         * MiniMax OpenAI-compatible function definition parameters.
+                         * The parameters the functions accepts, described as a JSON Schema object.
+                         *
+                         */
+                        parameters?: {
+                            [key: string]: unknown;
+                        };
+                        strict?: boolean | unknown;
+                    };
+                };
+            }>;
+        };
+    } | {
+        type: 'function';
+        function: {
+            name: string;
+        };
+    } | {
+        type: 'custom';
+        custom: {
+            /**
+             * The name of the custom tool, used to identify it in tool calls
+             */
+            name: string;
+            /**
+             * Optional description of the custom tool, used to provide more context
+             */
+            description?: string;
+            /**
+             * The input format for the custom tool. Default is unconstrained text.
+             */
+            format?: {
+                /**
+                 * Unconstrained text format. Always `text`
+                 */
+                type: 'text';
+            } | {
+                type: 'grammar';
+                /**
+                 * Your chosen grammar
+                 */
+                grammar: {
+                    /**
+                     * The grammar definition
+                     */
+                    definition: string;
+                    /**
+                     * The syntax of the grammar definition
+                     */
+                    syntax: 'lark' | 'regex';
+                };
+            };
+        };
+    };
+    temperature?: number | unknown;
+    max_tokens?: number | unknown;
+    stream?: boolean | unknown;
+};
+
+export type MiniMaxChatCompletionResponse = {
+    id: string;
+    choices: Array<{
+        finish_reason: 'stop' | 'length' | 'tool_calls' | 'content_filter' | 'function_call';
+        index: number;
+        logprobs: unknown;
+        /**
+         * MiniMax OpenAI-compatible message structure
+         */
+        message: {
+            content: string | unknown;
+            refusal?: string | unknown;
+            role: 'assistant';
+            annotations?: Array<unknown>;
+            audio?: unknown;
+            function_call?: {
+                arguments: string;
+                name: string;
+            } | unknown;
+            /**
+             * MiniMax OpenAI-compatible tool call structure
+             */
+            tool_calls?: Array<{
+                id: string;
+                type: 'function';
+                /**
+                 * MiniMax OpenAI-compatible function tool call
+                 */
+                function: {
+                    arguments: string;
+                    name: string;
+                };
+            } | {
+                id: string;
+                type: 'custom';
+                /**
+                 * MiniMax OpenAI-compatible custom tool call
+                 */
+                custom: {
+                    input: string;
+                    name: string;
+                };
+            }>;
+        };
+    }>;
+    created: number;
+    model: string;
+    object: 'chat.completion';
+    server_tier?: string;
+    system_fingerprint?: string | unknown;
+    /**
+     * MiniMax OpenAI-compatible API usage information
+     */
+    usage?: {
+        completion_tokens: number;
+        prompt_tokens: number;
+        total_tokens: number;
+        /**
+         * MiniMax OpenAI-compatible API usage details for completion tokens
+         */
+        completion_tokens_details?: unknown;
+        /**
+         * MiniMax OpenAI-compatible API usage details for prompt tokens
          */
         prompt_tokens_details?: unknown;
     };
@@ -5897,7 +6553,7 @@ export type GetChatApiKeysResponses = {
         id: string;
         organizationId: string;
         name: string;
-        provider: 'anthropic' | 'openai' | 'gemini';
+        provider: 'anthropic' | 'openai' | 'gemini' | 'minimax';
         secretId: string | null;
         scope: 'personal' | 'team' | 'org_wide';
         userId: string | null;
@@ -5917,7 +6573,7 @@ export type GetChatApiKeysResponse = GetChatApiKeysResponses[keyof GetChatApiKey
 export type CreateChatApiKeyData = {
     body: {
         name: string;
-        provider: 'anthropic' | 'openai' | 'gemini';
+        provider: 'anthropic' | 'openai' | 'gemini' | 'minimax';
         apiKey?: string;
         scope?: 'personal' | 'team' | 'org_wide';
         teamId?: string;
@@ -5996,7 +6652,7 @@ export type CreateChatApiKeyResponses = {
         id: string;
         organizationId: string;
         name: string;
-        provider: 'anthropic' | 'openai' | 'gemini';
+        provider: 'anthropic' | 'openai' | 'gemini' | 'minimax';
         secretId: string | null;
         scope: 'personal' | 'team' | 'org_wide';
         userId: string | null;
@@ -6012,7 +6668,7 @@ export type GetAvailableChatApiKeysData = {
     body?: never;
     path?: never;
     query?: {
-        provider?: 'anthropic' | 'openai' | 'gemini';
+        provider?: 'anthropic' | 'openai' | 'gemini' | 'minimax';
     };
     url: '/api/chat-api-keys/available';
 };
@@ -6084,7 +6740,7 @@ export type GetAvailableChatApiKeysResponses = {
         id: string;
         organizationId: string;
         name: string;
-        provider: 'anthropic' | 'openai' | 'gemini';
+        provider: 'anthropic' | 'openai' | 'gemini' | 'minimax';
         secretId: string | null;
         scope: 'personal' | 'team' | 'org_wide';
         userId: string | null;
@@ -6256,7 +6912,7 @@ export type GetChatApiKeyResponses = {
         id: string;
         organizationId: string;
         name: string;
-        provider: 'anthropic' | 'openai' | 'gemini';
+        provider: 'anthropic' | 'openai' | 'gemini' | 'minimax';
         secretId: string | null;
         scope: 'personal' | 'team' | 'org_wide';
         userId: string | null;
@@ -6356,7 +7012,7 @@ export type UpdateChatApiKeyResponses = {
         id: string;
         organizationId: string;
         name: string;
-        provider: 'anthropic' | 'openai' | 'gemini';
+        provider: 'anthropic' | 'openai' | 'gemini' | 'minimax';
         secretId: string | null;
         scope: 'personal' | 'team' | 'org_wide';
         userId: string | null;
@@ -6372,7 +7028,7 @@ export type GetChatModelsData = {
     body?: never;
     path?: never;
     query?: {
-        provider?: 'anthropic' | 'openai' | 'gemini';
+        provider?: 'anthropic' | 'openai' | 'gemini' | 'minimax';
     };
     url: '/api/chat/models';
 };
@@ -6443,7 +7099,7 @@ export type GetChatModelsResponses = {
     200: Array<{
         id: string;
         displayName: string;
-        provider: 'anthropic' | 'openai' | 'gemini';
+        provider: 'anthropic' | 'openai' | 'gemini' | 'minimax';
         createdAt?: string;
     }>;
 };
@@ -12817,6 +13473,178 @@ export type GetMcpToolCallResponses = {
 
 export type GetMcpToolCallResponse = GetMcpToolCallResponses[keyof GetMcpToolCallResponses];
 
+export type MiniMaxChatCompletionsWithDefaultAgentData = {
+    body?: MiniMaxChatCompletionRequestInput;
+    headers: {
+        /**
+         * The user agent of the client
+         */
+        'user-agent'?: string;
+        /**
+         * Bearer token for MiniMax
+         */
+        authorization: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/minimax/chat/completions';
+};
+
+export type MiniMaxChatCompletionsWithDefaultAgentErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: {
+            message: string;
+            type: 'api_validation_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    401: {
+        error: {
+            message: string;
+            type: 'api_authentication_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    403: {
+        error: {
+            message: string;
+            type: 'api_authorization_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: {
+            message: string;
+            type: 'api_not_found_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    409: {
+        error: {
+            message: string;
+            type: 'api_conflict_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    500: {
+        error: {
+            message: string;
+            type: 'api_internal_server_error';
+        };
+    };
+};
+
+export type MiniMaxChatCompletionsWithDefaultAgentError = MiniMaxChatCompletionsWithDefaultAgentErrors[keyof MiniMaxChatCompletionsWithDefaultAgentErrors];
+
+export type MiniMaxChatCompletionsWithDefaultAgentResponses = {
+    /**
+     * Default Response
+     */
+    200: MiniMaxChatCompletionResponse;
+};
+
+export type MiniMaxChatCompletionsWithDefaultAgentResponse = MiniMaxChatCompletionsWithDefaultAgentResponses[keyof MiniMaxChatCompletionsWithDefaultAgentResponses];
+
+export type MiniMaxChatCompletionsWithAgentData = {
+    body?: MiniMaxChatCompletionRequestInput;
+    headers: {
+        /**
+         * The user agent of the client
+         */
+        'user-agent'?: string;
+        /**
+         * Bearer token for MiniMax
+         */
+        authorization: string;
+    };
+    path: {
+        agentId: string;
+    };
+    query?: never;
+    url: '/v1/minimax/{agentId}/chat/completions';
+};
+
+export type MiniMaxChatCompletionsWithAgentErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: {
+            message: string;
+            type: 'api_validation_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    401: {
+        error: {
+            message: string;
+            type: 'api_authentication_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    403: {
+        error: {
+            message: string;
+            type: 'api_authorization_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: {
+            message: string;
+            type: 'api_not_found_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    409: {
+        error: {
+            message: string;
+            type: 'api_conflict_error';
+        };
+    };
+    /**
+     * Default Response
+     */
+    500: {
+        error: {
+            message: string;
+            type: 'api_internal_server_error';
+        };
+    };
+};
+
+export type MiniMaxChatCompletionsWithAgentError = MiniMaxChatCompletionsWithAgentErrors[keyof MiniMaxChatCompletionsWithAgentErrors];
+
+export type MiniMaxChatCompletionsWithAgentResponses = {
+    /**
+     * Default Response
+     */
+    200: MiniMaxChatCompletionResponse;
+};
+
+export type MiniMaxChatCompletionsWithAgentResponse = MiniMaxChatCompletionsWithAgentResponses[keyof MiniMaxChatCompletionsWithAgentResponses];
+
 export type GetV1McpByProfileIdData = {
     body?: never;
     path: {
@@ -13331,7 +14159,7 @@ export type GetOptimizationRulesResponses = {
         } | {
             hasTools: boolean;
         }>;
-        provider: 'openai' | 'gemini' | 'anthropic';
+        provider: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         targetModel: string;
         enabled: boolean;
         createdAt: string;
@@ -13351,7 +14179,7 @@ export type CreateOptimizationRuleData = {
         } | {
             hasTools: boolean;
         }>;
-        provider: 'openai' | 'gemini' | 'anthropic';
+        provider: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         targetModel: string;
         enabled?: boolean;
         createdAt?: unknown;
@@ -13434,7 +14262,7 @@ export type CreateOptimizationRuleResponses = {
         } | {
             hasTools: boolean;
         }>;
-        provider: 'openai' | 'gemini' | 'anthropic';
+        provider: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         targetModel: string;
         enabled: boolean;
         createdAt: string;
@@ -13533,7 +14361,7 @@ export type UpdateOptimizationRuleData = {
         } | {
             hasTools: boolean;
         }>;
-        provider?: 'openai' | 'gemini' | 'anthropic';
+        provider?: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         targetModel?: string;
         enabled?: boolean;
         createdAt?: unknown;
@@ -13618,7 +14446,7 @@ export type UpdateOptimizationRuleResponses = {
         } | {
             hasTools: boolean;
         }>;
-        provider: 'openai' | 'gemini' | 'anthropic';
+        provider: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         targetModel: string;
         enabled: boolean;
         createdAt: string;
@@ -16738,7 +17566,7 @@ export type GetTokenPricesResponses = {
      */
     200: Array<{
         id: string;
-        provider: 'openai' | 'gemini' | 'anthropic';
+        provider: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;
@@ -16751,7 +17579,7 @@ export type GetTokenPricesResponse = GetTokenPricesResponses[keyof GetTokenPrice
 
 export type CreateTokenPriceData = {
     body: {
-        provider: 'openai' | 'gemini' | 'anthropic';
+        provider: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;
@@ -16826,7 +17654,7 @@ export type CreateTokenPriceResponses = {
      */
     200: {
         id: string;
-        provider: 'openai' | 'gemini' | 'anthropic';
+        provider: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;
@@ -16990,7 +17818,7 @@ export type GetTokenPriceResponses = {
      */
     200: {
         id: string;
-        provider: 'openai' | 'gemini' | 'anthropic';
+        provider: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;
@@ -17003,7 +17831,7 @@ export type GetTokenPriceResponse = GetTokenPriceResponses[keyof GetTokenPriceRe
 
 export type UpdateTokenPriceData = {
     body?: {
-        provider?: 'openai' | 'gemini' | 'anthropic';
+        provider?: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         model?: string;
         pricePerMillionInput?: string;
         pricePerMillionOutput?: string;
@@ -17080,7 +17908,7 @@ export type UpdateTokenPriceResponses = {
      */
     200: {
         id: string;
-        provider: 'openai' | 'gemini' | 'anthropic';
+        provider: 'openai' | 'gemini' | 'anthropic' | 'minimax';
         model: string;
         pricePerMillionInput: string;
         pricePerMillionOutput: string;

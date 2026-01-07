@@ -42,6 +42,7 @@ import {
   Anthropic,
   ApiError,
   Gemini,
+  MiniMax,
   OpenAi,
   WebSocketMessageSchema,
 } from "@/types";
@@ -78,6 +79,12 @@ export function registerOpenApiSchemas() {
   });
   z.globalRegistry.add(OpenAi.API.ChatCompletionResponseSchema, {
     id: "OpenAiChatCompletionResponse",
+  });
+  z.globalRegistry.add(MiniMax.API.ChatCompletionRequestSchema, {
+    id: "MiniMaxChatCompletionRequest",
+  });
+  z.globalRegistry.add(MiniMax.API.ChatCompletionResponseSchema, {
+    id: "MiniMaxChatCompletionResponse",
   });
   z.globalRegistry.add(Gemini.API.GenerateContentRequestSchema, {
     id: "GeminiGenerateContentRequest",

@@ -102,17 +102,103 @@ export class OpenAiDualLlmClient implements DualLlmClient {
     const response = await this.client.chat.completions.create({
       model: this.model,
       messages,
+      temperature,
       response_format: {
         type: "json_schema",
-        json_schema: schema,
+        json_schema: {
+          name: schema.name,
+          schema: schema.schema,
+          strict: true,
+        },
       },
+    });
+
+    const content = response.choices[0].message.content?.trim() || "";
+    logger.debug(
+      { model: this.model, responseLength: content.length },
+      "[dualLlmClient] OpenAI: chat with schema complete",
+    );
+    return JSON.parse(content) as T;
+  }
+}
+
+/**
+ * MiniMax implementation of DualLlmClient
+ * MiniMax is OpenAI-compatible, so we reuse the OpenAI SDK
+ */
+export class MiniMaxDualLlmClient implements DualLlmClient {
+  private client: OpenAI;
+  private model: string;
+
+  constructor(apiKey: string, model = "MiniMax-M2") {
+    logger.debug({ model }, "[dualLlmClient] MiniMax: initializing client");
+    this.client = new OpenAI({
+      apiKey,
+      baseURL: config.llm.minimax.baseUrl,
+    });
+    this.model = model;
+  }
+
+  async chat(messages: DualLlmMessage[], temperature = 0): Promise<string> {
+    logger.debug(
+      { model: this.model, messageCount: messages.length, temperature },
+      "[dualLlmClient] MiniMax: starting chat completion",
+    );
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages,
       temperature,
     });
 
-    const content = response.choices[0].message.content || "";
+    const content = response.choices[0].message.content?.trim() || "";
     logger.debug(
       { model: this.model, responseLength: content.length },
-      "[dualLlmClient] OpenAI: chat with schema complete, parsing response",
+      "[dualLlmClient] MiniMax: chat completion complete",
+    );
+    return content;
+  }
+
+  async chatWithSchema<T>(
+    messages: DualLlmMessage[],
+    schema: {
+      name: string;
+      schema: {
+        type: string;
+        properties: Record<string, unknown>;
+        required: string[];
+        additionalProperties: boolean;
+      };
+    },
+    temperature = 0,
+  ): Promise<T> {
+    logger.debug(
+      {
+        model: this.model,
+        schemaName: schema.name,
+        messageCount: messages.length,
+        temperature,
+      },
+      "[dualLlmClient] MiniMax: starting chat with schema",
+    );
+
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages,
+      temperature,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: schema.name,
+          schema: schema.schema,
+          strict: true,
+        },
+      },
+    });
+
+    const content = response.choices[0].message.content?.trim() || "";
+    logger.debug(
+      { model: this.model, responseLength: content.length },
+      "[dualLlmClient] MiniMax: chat with schema complete",
     );
     return JSON.parse(content) as T;
   }
@@ -356,6 +442,12 @@ export function createDualLlmClient(
         throw new Error("API key required for OpenAI dual LLM");
       }
       return new OpenAiDualLlmClient(apiKey);
+    case "minimax":
+      if (!apiKey) {
+        throw new Error("API key required for MiniMax dual LLM");
+      }
+      // MiniMax is OpenAI-compatible, so we can use OpenAI client with MiniMax base URL
+      return new MiniMaxDualLlmClient(apiKey);
     case "gemini":
       // Gemini supports Vertex AI mode where apiKey may be undefined
       return new GeminiDualLlmClient(apiKey);

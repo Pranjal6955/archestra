@@ -626,6 +626,8 @@ type ParsedProviderError =
   | ParsedAnthropicError
   | ParsedGeminiError;
 
+// MiniMax uses OpenAI-compatible error format, so ParsedOpenAIError covers it
+
 type ErrorParser = (responseBody: string) => ParsedProviderError | null;
 type ErrorMapper = (
   statusCode: number | undefined,
@@ -674,6 +676,7 @@ const providerParsers: Record<SupportedProvider, ErrorParser> = {
   openai: parseOpenAIError,
   anthropic: parseAnthropicError,
   gemini: parseGeminiError,
+  minimax: parseOpenAIError, // MiniMax is OpenAI-compatible
 };
 
 /**
@@ -685,6 +688,7 @@ const providerMappers: Record<SupportedProvider, ErrorMapper> = {
   openai: mapOpenAIErrorWrapper,
   anthropic: mapAnthropicErrorWrapper,
   gemini: mapGeminiErrorWrapper,
+  minimax: mapOpenAIErrorWrapper, // MiniMax is OpenAI-compatible
 };
 
 // =============================================================================
@@ -839,6 +843,19 @@ export function mapProviderError(
     if (responseBody) {
       parsedError = parseError(responseBody);
     }
+  } else if (error instanceof Error && error.name === "AI_InvalidPromptError") {
+    // Handle AI SDK InvalidPromptError
+    return {
+      code: ChatErrorCode.InvalidRequest,
+      message: error.message,
+      isRetryable: false,
+      originalError: {
+        provider,
+        message: error.message,
+        type: "AI_InvalidPromptError",
+        raw: safeSerialize(error),
+      },
+    };
   } else if (typeof error === "object" && error !== null) {
     // Handle generic error objects
     const obj = error as Record<string, unknown>;

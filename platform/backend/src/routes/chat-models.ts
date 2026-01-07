@@ -131,6 +131,122 @@ async function fetchOpenAiModels(apiKey: string): Promise<ModelInfo[]> {
 }
 
 /**
+ * Fetch models from MiniMax API (OpenAI-compatible)
+ * Note: MiniMax might not expose /models endpoint, so we test the API key
+ * with a simple chat completion and return hardcoded known models.
+ */
+async function fetchMiniMaxModels(apiKey: string): Promise<ModelInfo[]> {
+  const baseUrl = config.chat.minimax.baseUrl;
+  
+  // First, try to fetch from /models endpoint
+  try {
+    const url = `${baseUrl}/models`;
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as {
+        data?: Array<{
+          id: string;
+          created?: number;
+          owned_by?: string;
+        }>;
+      };
+
+      // If we got models, filter and return them
+      if (data.data && Array.isArray(data.data)) {
+        const filtered = data.data
+          .filter((model) => {
+            const id = model.id.toLowerCase();
+            return id.startsWith("minimax-");
+          })
+          .map((model) => ({
+            id: model.id,
+            displayName: model.id,
+            provider: "minimax" as const,
+            createdAt: model.created
+              ? new Date(model.created * 1000).toISOString()
+              : undefined,
+          }));
+
+        // If we found models, return them
+        if (filtered.length > 0) {
+          return filtered;
+        }
+      }
+    }
+  } catch (error) {
+    // /models endpoint might not be available, continue to API key test
+    logger.debug({ error }, "MiniMax /models endpoint not available, testing with chat completion");
+  }
+
+  const testUrl = `${baseUrl}/chat/completions`;
+  const testResponse = await fetch(testUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "MiniMax-M2",
+      messages: [{ role: "user", content: "test" }],
+      max_tokens: 1,
+    }),
+  });
+
+  if (!testResponse.ok) {
+    const errorText = await testResponse.text();
+
+    // Check if it's an "insufficient balance" error
+    if (
+      (testResponse.status === 429 || testResponse.status === 402) &&
+      (errorText.includes("insufficient_balance") ||
+        errorText.includes("balance"))
+    ) {
+      logger.info("MiniMax API key validated (insufficient balance)");
+      return [
+        {
+          id: "MiniMax-M2",
+          displayName: "MiniMax-M2",
+          provider: "minimax" as const,
+        },
+        {
+          id: "MiniMax-M2.1",
+          displayName: "MiniMax-M2.1",
+          provider: "minimax" as const,
+        },
+      ];
+    }
+
+    logger.error(
+      { status: testResponse.status, error: errorText },
+      "Failed to validate MiniMax API key",
+    );
+    throw new Error(
+      `Invalid MiniMax API key: ${testResponse.status} ${errorText}`,
+    );
+  }
+
+  // API key is valid, return known MiniMax models
+  // These are the models documented in MiniMax's API
+  return [
+    {
+      id: "MiniMax-M2",
+      displayName: "MiniMax-M2",
+      provider: "minimax" as const,
+    },
+    {
+      id: "MiniMax-M2.1",
+      displayName: "MiniMax-M2.1",
+      provider: "minimax" as const,
+    },
+  ];
+}
+
+/**
  * Fetch models from Gemini API
  */
 async function fetchGeminiModels(apiKey: string): Promise<ModelInfo[]> {
@@ -212,6 +328,8 @@ async function getProviderApiKey({
       return config.chat.openai.apiKey || null;
     case "gemini":
       return config.chat.gemini.apiKey || null;
+    case "minimax":
+      return config.chat.minimax.apiKey || null;
     default:
       return null;
   }
@@ -225,6 +343,7 @@ const modelFetchers: Record<
   anthropic: fetchAnthropicModels,
   openai: fetchOpenAiModels,
   gemini: fetchGeminiModels,
+  minimax: fetchMiniMaxModels,
 };
 
 /**
@@ -275,7 +394,7 @@ async function fetchModelsForProvider({
 
   try {
     let models: ModelInfo[] = [];
-    if (["anthropic", "openai"].includes(provider)) {
+    if (["anthropic", "openai", "minimax"].includes(provider)) {
       if (apiKey) {
         models = await modelFetchers[provider](apiKey);
       }

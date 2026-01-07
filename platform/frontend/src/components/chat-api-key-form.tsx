@@ -90,6 +90,14 @@ const PROVIDER_CONFIG: Record<
     consoleUrl: "https://aistudio.google.com/app/apikey",
     consoleName: "Google AI Studio",
   },
+  minimax: {
+    name: "MiniMax",
+    icon: "/icons/minimax.png",
+    placeholder: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+    enabled: true,
+    consoleUrl: "https://platform.minimax.io/",
+    consoleName: "MiniMax Platform",
+  },
 } as const;
 
 export { PROVIDER_CONFIG };

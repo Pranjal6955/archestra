@@ -37,6 +37,10 @@ export function detectProviderFromModel(model: string): SupportedChatProvider {
     return "openai";
   }
 
+  if (lowerModel.includes("minimax")) {
+    return "minimax";
+  }
+
   // Default to anthropic for backwards compatibility
   return "anthropic";
 }
@@ -75,7 +79,8 @@ export async function resolveProviderApiKey(params: {
       secret?.secret?.apiKey ??
       secret?.secret?.anthropicApiKey ??
       secret?.secret?.geminiApiKey ??
-      secret?.secret?.openaiApiKey;
+      secret?.secret?.openaiApiKey ??
+      secret?.secret?.minimaxApiKey;
     if (secretValue) {
       providerApiKey = secretValue as string;
       apiKeySource = resolvedApiKey.scope;
@@ -92,6 +97,9 @@ export async function resolveProviderApiKey(params: {
       apiKeySource = "environment";
     } else if (provider === "gemini" && config.chat.gemini.apiKey) {
       providerApiKey = config.chat.gemini.apiKey;
+      apiKeySource = "environment";
+    } else if (provider === "minimax" && config.chat.minimax.apiKey) {
+      providerApiKey = config.chat.minimax.apiKey;
       apiKeySource = "environment";
     }
   }
@@ -168,6 +176,19 @@ export function createLLMModel(params: {
     });
     // Use .chat() to force Chat Completions API (not Responses API)
     // so our proxy's tool policy evaluation is applied
+    return client.chat(modelName);
+  }
+
+  if (provider === "minimax") {
+    // MiniMax is OpenAI-compatible, so we can use the OpenAI SDK provider
+    // URL format: /v1/minimax/:agentId/chat/completions
+    // Note: Vercel AI SDK's OpenAI provider should work with MiniMax's OpenAI-compatible API
+    const client = createOpenAI({
+      apiKey,
+      baseURL: `http://localhost:${config.api.port}/v1/minimax/${agentId}`,
+      headers,
+    });
+    // Use .chat() to ensure we use the chat completions protocol
     return client.chat(modelName);
   }
 

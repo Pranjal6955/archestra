@@ -7,6 +7,7 @@ import type {
   InteractionUtils,
 } from "./llmProviders/common";
 import GeminiGenerateContentInteraction from "./llmProviders/gemini";
+import MiniMaxChatCompletionInteraction from "./llmProviders/minimax";
 import OpenAiChatCompletionInteraction from "./llmProviders/openai";
 
 export interface CostSavingsInput {
@@ -116,6 +117,8 @@ export class DynamicInteraction implements InteractionUtils {
       return new OpenAiChatCompletionInteraction(interaction);
     } else if (this.type === "anthropic:messages") {
       return new AnthropicMessagesInteraction(interaction);
+    } else if (this.type === "minimax:chatCompletions") {
+      return new MiniMaxChatCompletionInteraction(interaction);
     }
     return new GeminiGenerateContentInteraction(interaction);
   }
