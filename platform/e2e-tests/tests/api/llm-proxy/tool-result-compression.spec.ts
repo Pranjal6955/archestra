@@ -164,6 +164,44 @@ const geminiConfig: CompressionTestConfig = {
   }),
 };
 
+const minimaxConfig: CompressionTestConfig = {
+  providerName: "MiniMax",
+
+  endpoint: (profileId) => `/v1/minimax/${profileId}/chat/completions`,
+
+  headers: (wiremockStub) => ({
+    Authorization: `Bearer ${wiremockStub}`,
+    "Content-Type": "application/json",
+  }),
+
+  // MiniMax format: Same as OpenAI
+  buildRequestWithToolResult: () => ({
+    model: "abab6.5-chat",
+    messages: [
+      { role: "user", content: "What files are in the current directory?" },
+      {
+        role: "assistant",
+        content: null,
+        tool_calls: [
+          {
+            id: "call_123",
+            type: "function",
+            function: {
+              name: "list_files",
+              arguments: '{"directory": "."}',
+            },
+          },
+        ],
+      },
+      {
+        role: "tool",
+        tool_call_id: "call_123",
+        content: JSON.stringify(TOOL_RESULT_DATA),
+      },
+    ],
+  }),
+};
+
 // =============================================================================
 // Test Suite
 // =============================================================================
@@ -172,6 +210,7 @@ const testConfigs: CompressionTestConfig[] = [
   openaiConfig,
   anthropicConfig,
   geminiConfig,
+  minimaxConfig,
 ];
 
 for (const config of testConfigs) {
@@ -261,16 +300,52 @@ for (const config of testConfigs) {
       expect(response.ok()).toBeTruthy();
     });
 
+    test("handles streaming requests with compressed tool results", async ({
+      request,
+      createAgent,
+      updateOrganization,
+      makeApiRequest,
+    }) => {
+      // 1. Enable compression
+      await updateOrganization(request, {
+        convertToolResultsToToon: true,
+        compressionScope: "organization",
+      });
+
+      // 2. Create a test profile
+      const createResponse = await createAgent(
+        request,
+        `${config.providerName} Streaming Compression Test Profile`,
+      );
+      const profile = await createResponse.json();
+      profileId = profile.id;
+
+      // 3. Build request with stream: true
+      const requestData: any = config.buildRequestWithToolResult();
+      requestData.stream = true;
+
+      // 4. Send streaming request
+      const response = await makeApiRequest({
+        request,
+        method: "post",
+        urlSuffix: config.endpoint(profileId),
+        headers: config.headers(wiremockStub),
+        data: requestData,
+      });
+
+      expect(response.ok()).toBeTruthy();
+    });
+
     test.afterEach(async ({ request, deleteAgent, updateOrganization }) => {
       // Restore original compression settings
       await updateOrganization(request, {
         convertToolResultsToToon: originalCompressionEnabled,
         compressionScope: originalCompressionScope,
-      }).catch(() => {});
+      }).catch(() => { });
 
       // Clean up test profile
       if (profileId) {
-        await deleteAgent(request, profileId).catch(() => {});
+        await deleteAgent(request, profileId).catch(() => { });
         profileId = "";
       }
     });

@@ -19,7 +19,7 @@ interface ToolDefinition {
 
 interface ModelOptimizationTestConfig {
   providerName: string;
-  provider: "openai" | "anthropic" | "gemini";
+  provider: "openai" | "anthropic" | "gemini" | "minimax";
 
   // Request building
   endpoint: (agentId: string) => string;
@@ -191,10 +191,46 @@ function generateLongMessage(): string {
 // Test Suite
 // =============================================================================
 
+const minimaxConfig: ModelOptimizationTestConfig = {
+  providerName: "MiniMax",
+  provider: "minimax",
+
+  endpoint: (agentId) => `/v1/minimax/${agentId}/chat/completions`,
+
+  headers: (wiremockStub) => ({
+    Authorization: `Bearer ${wiremockStub}`,
+    "Content-Type": "application/json",
+  }),
+
+  buildRequest: (content, tools) => {
+    const request: Record<string, unknown> = {
+      model: "abab6.5-chat",
+      messages: [{ role: "user", content }],
+    };
+    if (tools && tools.length > 0) {
+      request.tools = tools.map((t) => ({
+        type: "function",
+        function: {
+          name: t.name,
+          description: t.description,
+          parameters: t.parameters,
+        },
+      }));
+    }
+    return request;
+  },
+
+  baselineModel: "abab6.5-chat",
+  optimizedModel: "abab6-chat",
+
+  getModelFromResponse: (response) => response.model,
+};
+
 const testConfigs: ModelOptimizationTestConfig[] = [
   openaiConfig,
   anthropicConfig,
   geminiConfig,
+  minimaxConfig,
 ];
 
 test.describe("LLMProxy-ModelOptimization", () => {
@@ -393,6 +429,48 @@ test.describe("LLMProxy-ModelOptimization", () => {
 
         // WireMock body matcher verifies the model was NOT swapped (stays baseline)
         expect(response.ok()).toBeTruthy();
+      });
+
+      test("handles streaming requests", async ({
+        request,
+        createAgent,
+        makeApiRequest,
+      }) => {
+        const wiremockStub = `${config.providerName.toLowerCase()}-streaming`;
+
+        // 1. Create a test agent
+        const createResponse = await createAgent(
+          request,
+          `${config.providerName} Streaming Test`,
+        );
+        const agent = await createResponse.json();
+        agentId = agent.id;
+
+        // 2. Build request with stream: true
+        const requestData: any = config.buildRequest("Hello, how are you?");
+        requestData.stream = true;
+
+        // 3. Send streaming request
+        const response = await makeApiRequest({
+          request,
+          method: "post",
+          urlSuffix: config.endpoint(agentId),
+          headers: config.headers(wiremockStub),
+          data: requestData,
+        });
+
+        expect(response.ok()).toBeTruthy();
+
+        // Verify content type for streaming
+        const contentType = response.headers()["content-type"];
+        if (config.providerName === "Anthropic") {
+          expect(contentType).toContain("text/event-stream");
+        } else if (config.providerName === "Gemini") {
+          // Gemini streaming might use different content types depending on version/adapter
+          // but should be successful
+        } else {
+          expect(contentType).toContain("text/event-stream");
+        }
       });
     });
   }

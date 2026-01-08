@@ -11,7 +11,7 @@ interface TokenCostLimitTestConfig {
   buildRequest: (content: string) => object;
   modelName: string;
   tokenPrice: {
-    provider: "openai" | "anthropic" | "gemini";
+    provider: "openai" | "anthropic" | "gemini" | "minimax";
     model: string;
     pricePerMillionInput: string;
     pricePerMillionOutput: string;
@@ -110,6 +110,33 @@ const geminiConfig: TokenCostLimitTestConfig = {
   },
 };
 
+const minimaxConfig: TokenCostLimitTestConfig = {
+  providerName: "MiniMax",
+
+  endpoint: (profileId) => `/v1/minimax/${profileId}/chat/completions`,
+
+  headers: (wiremockStub) => ({
+    Authorization: `Bearer ${wiremockStub}`,
+    "Content-Type": "application/json",
+  }),
+
+  buildRequest: (content) => ({
+    model: "test-minimax-cost-limit",
+    messages: [{ role: "user", content }],
+  }),
+
+  modelName: "test-minimax-cost-limit",
+
+  // WireMock returns: prompt_tokens: 100, completion_tokens: 20
+  // Cost = (100 * 20000 + 20 * 30000) / 1,000,000 = $2.60
+  tokenPrice: {
+    provider: "minimax",
+    model: "test-minimax-cost-limit",
+    pricePerMillionInput: "20000.00",
+    pricePerMillionOutput: "30000.00",
+  },
+};
+
 // =============================================================================
 // Test Suite
 // =============================================================================
@@ -118,6 +145,7 @@ const testConfigs: TokenCostLimitTestConfig[] = [
   openaiConfig,
   anthropicConfig,
   geminiConfig,
+  minimaxConfig,
 ];
 
 for (const config of testConfigs) {
@@ -147,7 +175,7 @@ for (const config of testConfigs) {
             p.model === config.tokenPrice.model,
         );
         if (existingPrice) {
-          await deleteTokenPrice(request, existingPrice.id).catch(() => {});
+          await deleteTokenPrice(request, existingPrice.id).catch(() => { });
         }
       }
 
@@ -322,18 +350,49 @@ for (const config of testConfigs) {
       expect(response2.ok()).toBeTruthy();
     });
 
+    test("handles streaming requests and tracks usage", async ({
+      request,
+      createAgent,
+      makeApiRequest,
+    }) => {
+      const wiremockStub = `${config.providerName.toLowerCase()}-token-cost-limit-test`;
+
+      // 1. Create a test agent
+      const createResponse = await createAgent(
+        request,
+        `${config.providerName} Streaming Cost Test Agent`,
+      );
+      const agent = await createResponse.json();
+      profileId = agent.id;
+
+      // 2. Build request with stream: true
+      const requestData: any = config.buildRequest("Hello, how are you?");
+      requestData.stream = true;
+
+      // 3. Send streaming request
+      const response = await makeApiRequest({
+        request,
+        method: "post",
+        urlSuffix: config.endpoint(profileId),
+        headers: config.headers(wiremockStub),
+        data: requestData,
+      });
+
+      expect(response.ok()).toBeTruthy();
+    });
+
     test.afterEach(
       async ({ request, deleteLimit, deleteAgent, deleteTokenPrice }) => {
         if (limitId) {
-          await deleteLimit(request, limitId).catch(() => {});
+          await deleteLimit(request, limitId).catch(() => { });
           limitId = "";
         }
         if (profileId) {
-          await deleteAgent(request, profileId).catch(() => {});
+          await deleteAgent(request, profileId).catch(() => { });
           profileId = "";
         }
         if (tokenPriceId) {
-          await deleteTokenPrice(request, tokenPriceId).catch(() => {});
+          await deleteTokenPrice(request, tokenPriceId).catch(() => { });
           tokenPriceId = "";
         }
       },

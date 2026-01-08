@@ -130,6 +130,30 @@ const geminiConfig: ToolPersistenceTestConfig = {
   }),
 };
 
+const minimaxConfig: ToolPersistenceTestConfig = {
+  providerName: "MiniMax",
+
+  endpoint: (agentId) => `/v1/minimax/${agentId}/chat/completions`,
+
+  headers: (wiremockStub) => ({
+    Authorization: `Bearer ${wiremockStub}`,
+    "Content-Type": "application/json",
+  }),
+
+  buildRequest: (content, tools) => ({
+    model: "abab6.5-chat",
+    messages: [{ role: "user", content }],
+    tools: tools.map((t) => ({
+      type: "function",
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: t.parameters,
+      },
+    })),
+  }),
+};
+
 // =============================================================================
 // Test Suite
 // =============================================================================
@@ -138,6 +162,7 @@ const testConfigs: ToolPersistenceTestConfig[] = [
   openaiConfig,
   anthropicConfig,
   geminiConfig,
+  minimaxConfig,
 ];
 
 for (const config of testConfigs) {
@@ -249,6 +274,43 @@ for (const config of testConfigs) {
 
       // Should have exactly 1 instance, not 2
       expect(alphaTools.length).toBe(1);
+    });
+
+    test("handles streaming requests and persists tools", async ({
+      request,
+      createAgent,
+      makeApiRequest,
+      waitForAgentTool,
+    }) => {
+      const wiremockStub = `${config.providerName.toLowerCase()}-tool-persistence`;
+
+      // 1. Create a test agent
+      const createResponse = await createAgent(
+        request,
+        `${config.providerName} Streaming Tool Persistence Test Agent`,
+      );
+      const agent = await createResponse.json();
+      agentId = agent.id;
+
+      // 2. Build request with stream: true
+      const requestData: any = config.buildRequest("Test message", [
+        E2E_PERSIST_TOOL_ALPHA,
+      ]);
+      requestData.stream = true;
+
+      // 3. Send streaming request
+      const response = await makeApiRequest({
+        request,
+        method: "post",
+        urlSuffix: config.endpoint(agentId),
+        headers: config.headers(wiremockStub),
+        data: requestData,
+      });
+
+      expect(response.ok()).toBeTruthy();
+
+      // 4. Verify tool is persisted
+      await waitForAgentTool(request, agentId, "e2e_persist_test_tool_alpha");
     });
 
     test.afterEach(async ({ request, deleteAgent }) => {

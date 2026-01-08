@@ -140,6 +140,16 @@ export const RouteId = {
   AnthropicMessagesWithDefaultAgent: "anthropicMessagesWithDefaultAgent",
   AnthropicMessagesWithAgent: "anthropicMessagesWithAgent",
 
+  // Proxy Routes - Gemini
+  GeminiGenerateContentWithDefaultAgent:
+    "geminiGenerateContentWithDefaultAgent",
+  GeminiGenerateContentWithAgent: "geminiGenerateContentWithAgent",
+
+  // Proxy Routes - MiniMax
+  MiniMaxChatCompletionsWithDefaultAgent:
+    "miniMaxChatCompletionsWithDefaultAgent",
+  MiniMaxChatCompletionsWithAgent: "miniMaxChatCompletionsWithAgent",
+
   // Chat Routes
   StreamChat: "streamChat",
   GetChatConversations: "getChatConversations",

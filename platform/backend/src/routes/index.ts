@@ -43,6 +43,7 @@ export const geminiProxyRoutes = config.llm.gemini.useV2Routes
 export const openAiProxyRoutes = config.llm.openai.useV2Routes
   ? openAiProxyRoutesV2
   : openAiProxyRoutesV1;
+export { default as minimaxProxyRoutes } from "./proxy/minimax";
 export { default as secretsRoutes } from "./secrets";
 export { default as statisticsRoutes } from "./statistics";
 export { default as teamRoutes } from "./team";

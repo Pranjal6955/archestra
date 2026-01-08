@@ -56,7 +56,7 @@ export type ChatApiKeyResponse =
   archestraApiTypes.GetChatApiKeysResponses["200"][number];
 
 const PROVIDER_CONFIG: Record<
-  CreateChatApiKeyBody["provider"],
+  CreateChatApiKeyBody["provider"] | "minimax",
   {
     name: string;
     icon: string;
@@ -89,6 +89,14 @@ const PROVIDER_CONFIG: Record<
     enabled: true,
     consoleUrl: "https://aistudio.google.com/app/apikey",
     consoleName: "Google AI Studio",
+  },
+  minimax: {
+    name: "MiniMax",
+    icon: "/icons/minimax.png",
+    placeholder: "eyJ...",
+    enabled: true,
+    consoleUrl: "https://intl.minimaxi.com/user-center/basic-information/interface-key",
+    consoleName: "MiniMax Platform (Intl)",
   },
 } as const;
 

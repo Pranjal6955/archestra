@@ -3,7 +3,7 @@ title: Supported LLM Providers
 category: Archestra Platform
 order: 3
 description: LLM providers supported by Archestra Platform
-lastUpdated: 2025-12-11
+lastUpdated: 2026-01-08
 ---
 
 <!-- 
@@ -125,4 +125,26 @@ With this configuration, Application Default Credentials (ADC) will automaticall
 #### Other Environments
 
 For non-GKE environments or when Workload Identity isn't available, set `ARCHESTRA_GEMINI_VERTEX_AI_CREDENTIALS_FILE` to the path of a service account JSON key file.
+
+## MiniMax
+
+### Supported MiniMax APIs
+
+- **Chat Completions API** (`/chat/completions`) - ✅ Fully supported (OpenAI Compatible)
+
+### MiniMax Connection Details
+
+- **Base URL**: `http://localhost:9000/v1/minimax/{agent-id}`
+- **Authentication**: Pass your MiniMax API key in the `Authorization` header as `Bearer <your-api-key>`
+
+### Supported Models
+
+- `MiniMax-M2`
+- `MiniMax-M2.1`
+
+### Important Notes
+
+- **OpenAI Compatibility**: MiniMax provides an OpenAI-compatible API at `https://api.minimax.io/v1`, which Archestra uses to provide seamless integration.
+- **Tool Support**: Function calling (tool use) is fully supported, including tool invocation policies and TOON compression for tool results.
+- **Streaming**: Streaming is fully supported via the standard SSE format.
 

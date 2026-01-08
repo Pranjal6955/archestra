@@ -493,7 +493,7 @@ const createOptimizationRule = async (
   rule: {
     entityType: "organization" | "team" | "agent";
     entityId: string;
-    provider: "openai" | "anthropic" | "gemini";
+    provider: "openai" | "anthropic" | "gemini" | "minimax";
     conditions: OptimizationRuleCondition[];
     targetModel: string;
     enabled?: boolean;
@@ -604,7 +604,7 @@ const getLimits = async (
 const createTokenPrice = async (
   request: APIRequestContext,
   tokenPrice: {
-    provider: "openai" | "anthropic" | "gemini";
+    provider: "openai" | "anthropic" | "gemini" | "minimax";
     model: string;
     pricePerMillionInput: string;
     pricePerMillionOutput: string;
@@ -770,109 +770,109 @@ const clearWiremockRequests = async (request: APIRequestContext) => {
 
 export * from "@playwright/test";
 export const test = base.extend<TestFixtures>({
-  makeApiRequest: async ({}, use) => {
+  makeApiRequest: async ({ }, use) => {
     await use(makeApiRequest);
   },
-  createAgent: async ({}, use) => {
+  createAgent: async ({ }, use) => {
     await use(createAgent);
   },
-  deleteAgent: async ({}, use) => {
+  deleteAgent: async ({ }, use) => {
     await use(deleteAgent);
   },
-  createApiKey: async ({}, use) => {
+  createApiKey: async ({ }, use) => {
     await use(createApiKey);
   },
-  deleteApiKey: async ({}, use) => {
+  deleteApiKey: async ({ }, use) => {
     await use(deleteApiKey);
   },
-  createToolInvocationPolicy: async ({}, use) => {
+  createToolInvocationPolicy: async ({ }, use) => {
     await use(createToolInvocationPolicy);
   },
-  deleteToolInvocationPolicy: async ({}, use) => {
+  deleteToolInvocationPolicy: async ({ }, use) => {
     await use(deleteToolInvocationPolicy);
   },
-  createTrustedDataPolicy: async ({}, use) => {
+  createTrustedDataPolicy: async ({ }, use) => {
     await use(createTrustedDataPolicy);
   },
-  deleteTrustedDataPolicy: async ({}, use) => {
+  deleteTrustedDataPolicy: async ({ }, use) => {
     await use(deleteTrustedDataPolicy);
   },
-  createMcpCatalogItem: async ({}, use) => {
+  createMcpCatalogItem: async ({ }, use) => {
     await use(createMcpCatalogItem);
   },
-  deleteMcpCatalogItem: async ({}, use) => {
+  deleteMcpCatalogItem: async ({ }, use) => {
     await use(deleteMcpCatalogItem);
   },
-  installMcpServer: async ({}, use) => {
+  installMcpServer: async ({ }, use) => {
     await use(installMcpServer);
   },
-  uninstallMcpServer: async ({}, use) => {
+  uninstallMcpServer: async ({ }, use) => {
     await use(uninstallMcpServer);
   },
-  restartMcpServer: async ({}, use) => {
+  restartMcpServer: async ({ }, use) => {
     await use(restartMcpServer);
   },
-  createRole: async ({}, use) => {
+  createRole: async ({ }, use) => {
     await use(createRole);
   },
-  deleteRole: async ({}, use) => {
+  deleteRole: async ({ }, use) => {
     await use(deleteRole);
   },
-  waitForAgentTool: async ({}, use) => {
+  waitForAgentTool: async ({ }, use) => {
     await use(waitForAgentTool);
   },
-  getTeamByName: async ({}, use) => {
+  getTeamByName: async ({ }, use) => {
     await use(getTeamByName);
   },
-  addTeamMember: async ({}, use) => {
+  addTeamMember: async ({ }, use) => {
     await use(addTeamMember);
   },
-  removeTeamMember: async ({}, use) => {
+  removeTeamMember: async ({ }, use) => {
     await use(removeTeamMember);
   },
-  getActiveOrganizationId: async ({}, use) => {
+  getActiveOrganizationId: async ({ }, use) => {
     await use(getActiveOrganizationId);
   },
-  createOptimizationRule: async ({}, use) => {
+  createOptimizationRule: async ({ }, use) => {
     await use(createOptimizationRule);
   },
-  deleteOptimizationRule: async ({}, use) => {
+  deleteOptimizationRule: async ({ }, use) => {
     await use(deleteOptimizationRule);
   },
-  updateOptimizationRule: async ({}, use) => {
+  updateOptimizationRule: async ({ }, use) => {
     await use(updateOptimizationRule);
   },
-  createLimit: async ({}, use) => {
+  createLimit: async ({ }, use) => {
     await use(createLimit);
   },
-  deleteLimit: async ({}, use) => {
+  deleteLimit: async ({ }, use) => {
     await use(deleteLimit);
   },
-  getLimits: async ({}, use) => {
+  getLimits: async ({ }, use) => {
     await use(getLimits);
   },
-  createTokenPrice: async ({}, use) => {
+  createTokenPrice: async ({ }, use) => {
     await use(createTokenPrice);
   },
-  deleteTokenPrice: async ({}, use) => {
+  deleteTokenPrice: async ({ }, use) => {
     await use(deleteTokenPrice);
   },
-  getTokenPrices: async ({}, use) => {
+  getTokenPrices: async ({ }, use) => {
     await use(getTokenPrices);
   },
-  getOrganization: async ({}, use) => {
+  getOrganization: async ({ }, use) => {
     await use(getOrganization);
   },
-  updateOrganization: async ({}, use) => {
+  updateOrganization: async ({ }, use) => {
     await use(updateOrganization);
   },
-  getInteractions: async ({}, use) => {
+  getInteractions: async ({ }, use) => {
     await use(getInteractions);
   },
-  getWiremockRequests: async ({}, use) => {
+  getWiremockRequests: async ({ }, use) => {
     await use(getWiremockRequests);
   },
-  clearWiremockRequests: async ({}, use) => {
+  clearWiremockRequests: async ({ }, use) => {
     await use(clearWiremockRequests);
   },
   /**

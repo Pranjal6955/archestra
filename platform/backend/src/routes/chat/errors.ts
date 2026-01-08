@@ -325,7 +325,7 @@ function parseGeminiError(responseBody: string): ParsedGeminiError | null {
       // Details can be an array or object-like array from nested JSON parsing
       const details =
         Array.isArray(errorObj.details) ||
-        (typeof errorObj.details === "object" && errorObj.details !== null)
+          (typeof errorObj.details === "object" && errorObj.details !== null)
           ? (errorObj.details as unknown[] | Record<string, unknown>)
           : undefined;
 
@@ -335,24 +335,24 @@ function parseGeminiError(responseBody: string): ParsedGeminiError | null {
             ? errorObj.code
             : typeof parsed?.error === "object"
               ? ((parsed.error as Record<string, unknown>).code as
-                  | number
-                  | undefined)
+                | number
+                | undefined)
               : undefined,
         status:
           typeof errorObj.status === "string"
             ? errorObj.status
             : typeof parsed?.error === "object"
               ? ((parsed.error as Record<string, unknown>).status as
-                  | string
-                  | undefined)
+                | string
+                | undefined)
               : undefined,
         message:
           typeof errorObj.message === "string"
             ? errorObj.message
             : typeof parsed?.error === "object"
               ? ((parsed.error as Record<string, unknown>).message as
-                  | string
-                  | undefined)
+                | string
+                | undefined)
               : undefined,
         details: Array.isArray(details) ? details : undefined,
         // Extract ErrorInfo for specific error reason mapping
@@ -674,6 +674,7 @@ const providerParsers: Record<SupportedProvider, ErrorParser> = {
   openai: parseOpenAIError,
   anthropic: parseAnthropicError,
   gemini: parseGeminiError,
+  minimax: parseOpenAIError,
 };
 
 /**
@@ -685,6 +686,7 @@ const providerMappers: Record<SupportedProvider, ErrorMapper> = {
   openai: mapOpenAIErrorWrapper,
   anthropic: mapAnthropicErrorWrapper,
   gemini: mapGeminiErrorWrapper,
+  minimax: mapOpenAIErrorWrapper,
 };
 
 // =============================================================================

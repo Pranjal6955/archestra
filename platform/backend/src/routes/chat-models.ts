@@ -174,6 +174,64 @@ async function fetchGeminiModels(apiKey: string): Promise<ModelInfo[]> {
 }
 
 /**
+ * Fetch models from MiniMax API
+ */
+async function fetchMiniMaxModels(apiKey: string): Promise<ModelInfo[]> {
+  const baseUrl = config.chat.minimax.baseUrl;
+  // MiniMax unfortunately does not support listing models via API yet (or it's not documented well)
+  // But let's try standard OpenAI /models endpoint or fallback to hardcoded list
+  try {
+    const url = `${baseUrl}/models`;
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as {
+        data: Array<{
+          id: string;
+          created: number;
+          owned_by: string;
+        }>;
+      };
+
+      // If we get data, use it
+      if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+        return data.data.map((model) => ({
+          id: model.id,
+          displayName: model.id,
+          provider: "minimax" as const,
+          createdAt: new Date((model.created || Date.now() / 1000) * 1000).toISOString(),
+        }));
+      }
+    }
+  } catch (error) {
+    logger.warn({ error }, "Failed to fetch MiniMax models via API, falling back to static list");
+  }
+
+  // Fallback to known models if API fails or returns empty
+  return [
+    {
+      id: "MiniMax-M2.1",
+      displayName: "MiniMax M2.1",
+      provider: "minimax" as const,
+    },
+    {
+      id: "MiniMax-M2.1-lightning",
+      displayName: "MiniMax M2.1 Lightning",
+      provider: "minimax" as const,
+    },
+    {
+      id: "MiniMax-M2",
+      displayName: "MiniMax M2",
+      provider: "minimax" as const,
+    },
+  ];
+}
+
+/**
  * Get API key for a provider using resolution priority: personal → team → org_wide → env
  */
 async function getProviderApiKey({
@@ -212,6 +270,8 @@ async function getProviderApiKey({
       return config.chat.openai.apiKey || null;
     case "gemini":
       return config.chat.gemini.apiKey || null;
+    case "minimax":
+      return config.chat.minimax.apiKey || null;
     default:
       return null;
   }
@@ -225,6 +285,7 @@ const modelFetchers: Record<
   anthropic: fetchAnthropicModels,
   openai: fetchOpenAiModels,
   gemini: fetchGeminiModels,
+  minimax: fetchMiniMaxModels,
 };
 
 /**
@@ -275,7 +336,7 @@ async function fetchModelsForProvider({
 
   try {
     let models: ModelInfo[] = [];
-    if (["anthropic", "openai"].includes(provider)) {
+    if (["anthropic", "openai", "minimax"].includes(provider)) {
       if (apiKey) {
         models = await modelFetchers[provider](apiKey);
       }

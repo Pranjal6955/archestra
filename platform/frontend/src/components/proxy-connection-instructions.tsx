@@ -57,6 +57,7 @@ export function ProxyConnectionInstructions({
             {/* TODO: uncomment out once we officially have 100% support for Gemini */}
             {/* <SelectItem value="gemini">Gemini</SelectItem> */}
             <SelectItem value="anthropic">Anthropic</SelectItem>
+            <SelectItem value="minimax">MiniMax</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -133,6 +134,38 @@ export function ProxyConnectionInstructions({
             <div className="min-w-0 bg-muted/50 rounded-md px-3 py-2 border border-dashed border-muted-foreground/30">
               <CodeText className="text-xs line-through opacity-50 whitespace-nowrap">
                 https://api.anthropic.com/v1/
+              </CodeText>
+            </div>
+            <span className="text-muted-foreground flex-shrink-0">→</span>
+            <div className="flex-1 min-w-0 bg-primary/5 rounded-md px-3 py-2 border border-primary/20 flex items-center gap-2">
+              <CodeText className="text-xs text-primary break-all flex-1">
+                {proxyUrl}
+              </CodeText>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 flex-shrink-0"
+                onClick={handleCopy}
+              >
+                {copied ? (
+                  <Check className="h-3 w-3 text-green-500" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {selectedProvider === "minimax" && (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Replace your MiniMax base URL:
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 bg-muted/50 rounded-md px-3 py-2 border border-dashed border-muted-foreground/30">
+              <CodeText className="text-xs line-through opacity-50 whitespace-nowrap">
+                https://api.minimax.io/v1/
               </CodeText>
             </div>
             <span className="text-muted-foreground flex-shrink-0">→</span>
