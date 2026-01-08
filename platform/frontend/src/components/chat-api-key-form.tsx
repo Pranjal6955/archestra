@@ -95,7 +95,8 @@ const PROVIDER_CONFIG: Record<
     icon: "/icons/minimax.png",
     placeholder: "eyJ...",
     enabled: true,
-    consoleUrl: "https://intl.minimaxi.com/user-center/basic-information/interface-key",
+    consoleUrl:
+      "https://intl.minimaxi.com/user-center/basic-information/interface-key",
     consoleName: "MiniMax Platform (Intl)",
   },
 } as const;

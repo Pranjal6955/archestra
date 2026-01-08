@@ -50,7 +50,7 @@ export function EditSsoProviderDialog({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const form = useForm<SsoProviderFormValues>({
-    resolver: zodResolver(SsoProviderFormSchema),
+    resolver: zodResolver(SsoProviderFormSchema as any),
     defaultValues: {
       providerId: "",
       issuer: "",

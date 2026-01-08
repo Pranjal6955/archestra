@@ -54,8 +54,8 @@ export function calculateCostSavings(
   // Calculate tokens saved from TOON compression
   const toonTokensSaved =
     input.toonTokensBefore &&
-      input.toonTokensAfter &&
-      input.toonTokensBefore > input.toonTokensAfter
+    input.toonTokensAfter &&
+    input.toonTokensBefore > input.toonTokensAfter
       ? input.toonTokensBefore - input.toonTokensAfter
       : null;
 

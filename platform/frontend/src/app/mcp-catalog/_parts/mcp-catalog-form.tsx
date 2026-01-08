@@ -66,7 +66,7 @@ export function McpCatalogForm({
   );
 
   const form = useForm<McpCatalogFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema as any),
     defaultValues: initialValues
       ? transformCatalogItemToFormValues(initialValues, undefined)
       : {

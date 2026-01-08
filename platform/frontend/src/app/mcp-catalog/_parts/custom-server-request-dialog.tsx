@@ -71,7 +71,7 @@ export function CustomServerRequestDialog({
   onClose: () => void;
 }) {
   const form = useForm<CustomServerRequestFormValues>({
-    resolver: zodResolver(customServerRequestSchema),
+    resolver: zodResolver(customServerRequestSchema as any),
     defaultValues: {
       serverType: "remote",
       label: "",

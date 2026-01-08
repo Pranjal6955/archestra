@@ -44,7 +44,7 @@ export function CreateSsoProviderDialog({
   const createSsoProvider = useCreateSsoProvider();
 
   const form = useForm<SsoProviderFormValues>({
-    resolver: zodResolver(SsoProviderFormSchema),
+    resolver: zodResolver(SsoProviderFormSchema as any),
     defaultValues: defaultValues || {
       providerId: "",
       issuer: "",
