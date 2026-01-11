@@ -122,8 +122,32 @@ const libreBaskervilleFont = Libre_Baskerville({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://archestra.ai"),
   title: "Archestra.AI",
   description: "Enterprise MCP Platform for AI Agents",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://archestra.ai",
+    title: "Archestra.AI",
+    description: "Enterprise MCP Platform for AI Agents",
+    siteName: "Archestra.AI",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Archestra.AI",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Archestra.AI",
+    description: "Enterprise MCP Platform for AI Agents",
+    creator: "@archestra_ai",
+    images: ["/logo.png"],
+  },
 };
 
 export default function RootLayout({
