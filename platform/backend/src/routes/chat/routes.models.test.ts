@@ -543,6 +543,66 @@ describe("chat-models", () => {
         });
       });
 
+      test("maps Nano Banana Pro model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "nano-banana-pro",
+          name: "Nano Banana Pro",
+        });
+
+        expect(result).toEqual({
+          id: "nano-banana-pro",
+          displayName: "Nano Banana Pro",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["fast", "docs"],
+        });
+      });
+
+      test("maps Gemini Robotics model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "gemini-robotics-er-1.5",
+          name: "Gemini Robotics-ER 1.5 Preview",
+        });
+
+        expect(result).toEqual({
+          id: "gemini-robotics-er-1.5",
+          displayName: "Gemini Robotics-ER 1.5 Preview",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["vision", "docs"],
+        });
+      });
+
+      test("maps Computer Use model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "gemini-2.5-computer-use-10-2025",
+          name: "Gemini 2.5 Computer Use Preview",
+        });
+
+        expect(result).toEqual({
+          id: "gemini-2.5-computer-use-10-2025",
+          displayName: "Gemini 2.5 Computer Use Preview",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["vision", "image_generation", "docs"],
+        });
+      });
+
+      test("maps Deep Research model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "deep-research-pro-preview",
+          name: "Deep Research Pro Preview",
+        });
+
+        expect(result).toEqual({
+          id: "deep-research-pro-preview",
+          displayName: "Deep Research Pro Preview",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["reasoning", "docs"],
+        });
+      });
+
       test("maps GPT model with openai provider", () => {
         const result = mapOpenAiModelToModelInfo({
           id: "gpt-5",
