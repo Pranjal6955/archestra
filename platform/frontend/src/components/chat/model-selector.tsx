@@ -1,6 +1,10 @@
 "use client";
 
-import { providerDisplayNames, type SupportedProvider } from "@shared";
+import {
+  type ModelCapability,
+  providerDisplayNames,
+  type SupportedProvider,
+} from "@shared";
 import {
   Brain,
   CheckIcon,
@@ -33,12 +37,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useModelsByProvider } from "@/lib/chat-models.query";
+import { cn } from "@/lib/utils";
 
 interface ModelSelectorProps {
   /** Currently selected model */
@@ -60,11 +66,63 @@ const providerToLogoProvider: Record<SupportedProvider, string> = {
   ollama: "ollama",
 };
 
+/** Capability filter configuration */
+const capabilityFilters: Array<{
+  capability: ModelCapability;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+}> = [
+    {
+      capability: "vision",
+      label: "Vision",
+      icon: Eye,
+      color: "text-blue-500",
+      bgColor: "bg-blue-500/10",
+      borderColor: "border-blue-500/50",
+    },
+    {
+      capability: "reasoning",
+      label: "Reasoning",
+      icon: Brain,
+      color: "text-purple-500",
+      bgColor: "bg-purple-500/10",
+      borderColor: "border-purple-500/50",
+    },
+    {
+      capability: "image_generation",
+      label: "Image Gen",
+      icon: ImageIcon,
+      color: "text-pink-500",
+      bgColor: "bg-pink-500/10",
+      borderColor: "border-pink-500/50",
+    },
+    {
+      capability: "fast",
+      label: "Fast",
+      icon: Zap,
+      color: "text-amber-500",
+      bgColor: "bg-amber-500/10",
+      borderColor: "border-amber-500/50",
+    },
+    {
+      capability: "docs",
+      label: "Docs",
+      icon: FileText,
+      color: "text-emerald-500",
+      bgColor: "bg-emerald-500/10",
+      borderColor: "border-emerald-500/50",
+    },
+  ];
+
 /**
  * Model selector dialog with:
  * - Models grouped by provider with provider name headers
  * - Search functionality to filter models
  * - Models filtered by configured API keys
+ * - Capability filters to show only models with specific features
  * - Mid-conversation warning when switching models
  */
 export function ModelSelector({
@@ -76,11 +134,48 @@ export function ModelSelector({
   const { modelsByProvider } = useModelsByProvider();
   const [pendingModel, setPendingModel] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [selectedCapabilities, setSelectedCapabilities] = useState<
+    Set<ModelCapability>
+  >(new Set());
 
   // Get available providers from the fetched models
   const availableProviders = useMemo(() => {
     return Object.keys(modelsByProvider) as SupportedProvider[];
   }, [modelsByProvider]);
+
+  // Toggle capability filter
+  const toggleCapability = (capability: ModelCapability) => {
+    setSelectedCapabilities((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(capability)) {
+        newSet.delete(capability);
+      } else {
+        newSet.add(capability);
+      }
+      return newSet;
+    });
+  };
+
+  // Filter models by selected capabilities
+  const filteredModelsByProvider = useMemo(() => {
+    if (selectedCapabilities.size === 0) {
+      return modelsByProvider;
+    }
+
+    const filtered: Partial<typeof modelsByProvider> = {};
+    for (const provider of availableProviders) {
+      const models = modelsByProvider[provider]?.filter((model) => {
+        // Model must have ALL selected capabilities
+        return Array.from(selectedCapabilities).every((cap) =>
+          model.capabilities.includes(cap),
+        );
+      });
+      if (models && models.length > 0) {
+        filtered[provider] = models;
+      }
+    }
+    return filtered;
+  }, [modelsByProvider, selectedCapabilities, availableProviders]);
 
   // Find the provider for a given model
   const getProviderForModel = (model: string): SupportedProvider | null => {
@@ -170,6 +265,48 @@ export function ModelSelector({
         </ModelSelectorTrigger>
         <ModelSelectorContent title="Select Model">
           <ModelSelectorInput placeholder="Search models..." />
+
+          {/* Capability Filters */}
+          <div className="px-4 py-2 border-b">
+            <div className="flex flex-wrap gap-2">
+              {capabilityFilters.map((filter) => {
+                const Icon = filter.icon;
+                const isSelected = selectedCapabilities.has(filter.capability);
+                return (
+                  <Tooltip key={filter.capability}>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "cursor-pointer transition-all hover:scale-105",
+                          isSelected
+                            ? `${filter.bgColor} ${filter.borderColor} ${filter.color}`
+                            : "opacity-60 hover:opacity-100",
+                        )}
+                        onClick={() => toggleCapability(filter.capability)}
+                      >
+                        <Icon className={cn("size-3 mr-1", filter.color)} />
+                        {filter.label}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isSelected ? "Click to remove filter" : "Click to filter"}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+              {selectedCapabilities.size > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => setSelectedCapabilities(new Set())}
+                >
+                  Clear Filters ({selectedCapabilities.size})
+                </Badge>
+              )}
+            </div>
+          </div>
+
           <ModelSelectorList>
             <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
 
@@ -190,74 +327,79 @@ export function ModelSelector({
               </ModelSelectorGroup>
             )}
 
-            {availableProviders.map((provider) => (
-              <ModelSelectorGroup
-                key={provider}
-                heading={providerDisplayNames[provider]}
-              >
-                {modelsByProvider[provider]?.map((model) => (
-                  <ModelSelectorItem
-                    key={model.id}
-                    value={model.id}
-                    onSelect={() => handleSelectModel(model.id)}
-                  >
-                    <ModelSelectorLogo
-                      provider={providerToLogoProvider[provider]}
-                    />
-                    <ModelSelectorName>{model.displayName}</ModelSelectorName>
-                    <div className="flex items-center gap-1.5 ml-2">
-                      {model.capabilities.includes("vision") && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Eye className="size-3.5 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Vision Capable</TooltipContent>
-                        </Tooltip>
+            {availableProviders.map((provider) => {
+              const models = filteredModelsByProvider[provider];
+              if (!models || models.length === 0) return null;
+
+              return (
+                <ModelSelectorGroup
+                  key={provider}
+                  heading={providerDisplayNames[provider]}
+                >
+                  {models.map((model) => (
+                    <ModelSelectorItem
+                      key={model.id}
+                      value={model.id}
+                      onSelect={() => handleSelectModel(model.id)}
+                    >
+                      <ModelSelectorLogo
+                        provider={providerToLogoProvider[provider]}
+                      />
+                      <ModelSelectorName>{model.displayName}</ModelSelectorName>
+                      <div className="flex items-center gap-1.5 ml-2">
+                        {model.capabilities.includes("vision") && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Eye className="size-3.5 text-blue-500" />
+                            </TooltipTrigger>
+                            <TooltipContent>Vision Capable</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {model.capabilities.includes("reasoning") && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Brain className="size-3.5 text-purple-500" />
+                            </TooltipTrigger>
+                            <TooltipContent>Advanced Reasoning</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {model.capabilities.includes("image_generation") && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <ImageIcon className="size-3.5 text-pink-500" />
+                            </TooltipTrigger>
+                            <TooltipContent>Image Generation</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {model.capabilities.includes("fast") && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Zap className="size-3.5 text-amber-500" />
+                            </TooltipTrigger>
+                            <TooltipContent>Fast / Low Latency</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {model.capabilities.includes("docs") && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <FileText className="size-3.5 text-emerald-500" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Large Context / Documents
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                      {selectedModel === model.id ? (
+                        <CheckIcon className="ml-auto size-4" />
+                      ) : (
+                        <div className="ml-auto size-4" />
                       )}
-                      {model.capabilities.includes("reasoning") && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Brain className="size-3.5 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Advanced Reasoning</TooltipContent>
-                        </Tooltip>
-                      )}
-                      {model.capabilities.includes("image_generation") && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ImageIcon className="size-3.5 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Image Generation</TooltipContent>
-                        </Tooltip>
-                      )}
-                      {model.capabilities.includes("fast") && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Zap className="size-3.5 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>Fast / Low Latency</TooltipContent>
-                        </Tooltip>
-                      )}
-                      {model.capabilities.includes("docs") && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <FileText className="size-3.5 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            Large Context / Documents
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                    {selectedModel === model.id ? (
-                      <CheckIcon className="ml-auto size-4" />
-                    ) : (
-                      <div className="ml-auto size-4" />
-                    )}
-                  </ModelSelectorItem>
-                ))}
-              </ModelSelectorGroup>
-            ))}
+                    </ModelSelectorItem>
+                  ))}
+                </ModelSelectorGroup>
+              );
+            })}
           </ModelSelectorList>
         </ModelSelectorContent>
       </ModelSelectorRoot>
