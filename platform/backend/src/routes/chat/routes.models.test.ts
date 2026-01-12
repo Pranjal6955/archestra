@@ -81,7 +81,6 @@ describe("chat-models", () => {
         },
       ]);
 
-
       // Verify fetch was called with correct URL
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const fetchUrl = mockFetch.mock.calls[0][0];
@@ -160,27 +159,27 @@ describe("chat-models", () => {
         version: string;
         tunedModelInfo: Record<string, unknown>;
       }> = [
-          {
-            name: "publishers/google/models/gemini-2.5-pro",
-            version: "default",
-            tunedModelInfo: {},
-          },
-          {
-            name: "publishers/google/models/gemini-2.5-flash",
-            version: "default",
-            tunedModelInfo: {},
-          },
-          {
-            name: "publishers/google/models/gemini-embedding-001",
-            version: "default",
-            tunedModelInfo: {},
-          },
-          {
-            name: "publishers/google/models/imageclassification-efficientnet",
-            version: "001",
-            tunedModelInfo: {},
-          },
-        ];
+        {
+          name: "publishers/google/models/gemini-2.5-pro",
+          version: "default",
+          tunedModelInfo: {},
+        },
+        {
+          name: "publishers/google/models/gemini-2.5-flash",
+          version: "default",
+          tunedModelInfo: {},
+        },
+        {
+          name: "publishers/google/models/gemini-embedding-001",
+          version: "default",
+          tunedModelInfo: {},
+        },
+        {
+          name: "publishers/google/models/imageclassification-efficientnet",
+          version: "001",
+          tunedModelInfo: {},
+        },
+      ];
 
       // Create async iterator from mock models
       const mockPager = {

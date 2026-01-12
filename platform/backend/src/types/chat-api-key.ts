@@ -8,13 +8,9 @@ import { schema } from "@/database";
 import { SecretStorageTypeSchema } from "./mcp-server";
 
 // Supported chat providers
-export const SupportedChatProviderSchema = z.enum([
-  "anthropic",
-  "openai",
-  "gemini",
-  "vllm",
-  "ollama",
-]).or(z.string());
+export const SupportedChatProviderSchema = z
+  .enum(["anthropic", "openai", "gemini", "vllm", "ollama"])
+  .or(z.string());
 export type SupportedChatProvider = z.infer<typeof SupportedChatProviderSchema>;
 
 // Chat API Key scope

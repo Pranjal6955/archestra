@@ -1,10 +1,10 @@
 import {
+  type ModelCapability,
+  ModelCapabilitySchema,
   RouteId,
   type SupportedProvider,
   SupportedProviders,
   TimeInMs,
-  type ModelCapability,
-  ModelCapabilitySchema,
 } from "@shared";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { uniqBy } from "lodash-es";
@@ -51,7 +51,7 @@ export interface ModelInfo {
  * Resolve capabilities for a model based on its ID and provider
  */
 function resolveModelCapabilities(
-  provider: SupportedProvider,
+  _provider: SupportedProvider,
   modelId: string,
 ): ModelCapability[] {
   const capabilities: ModelCapability[] = [];
@@ -68,13 +68,12 @@ function resolveModelCapabilities(
     lowerId.includes("o4") ||
     lowerId.includes("omni-moderation") ||
     // Anthropic
-    (lowerId.includes("claude") && (
-      lowerId.includes("3") ||
-      lowerId.includes("4") ||
-      lowerId.includes("5") ||
-      lowerId.includes("v3") ||
-      lowerId.includes("v4")
-    )) ||
+    (lowerId.includes("claude") &&
+      (lowerId.includes("3") ||
+        lowerId.includes("4") ||
+        lowerId.includes("5") ||
+        lowerId.includes("v3") ||
+        lowerId.includes("v4"))) ||
     // Gemini
     lowerId.includes("gemini-1.5") ||
     lowerId.includes("gemini-2") ||
@@ -106,20 +105,18 @@ function resolveModelCapabilities(
     // DeepSeek
     lowerId.includes("deepseek-r1") ||
     // Anthropic
-    (lowerId.includes("claude") && (
-      lowerId.includes("opus") ||
-      lowerId.includes("sonnet") ||
-      lowerId.includes("4") ||
-      lowerId.includes("5")
-    ) && (
-        lowerId.includes("3.5") ||
+    (lowerId.includes("claude") &&
+      (lowerId.includes("opus") ||
+        lowerId.includes("sonnet") ||
+        lowerId.includes("4") ||
+        lowerId.includes("5")) &&
+      (lowerId.includes("3.5") ||
         lowerId.includes("3-5") ||
         lowerId.includes("3.7") ||
         lowerId.includes("3-7") ||
         lowerId.includes("4") ||
         lowerId.includes("5") ||
-        lowerId.includes("opus") // Any Claude Opus is reasoning
-      )) ||
+        lowerId.includes("opus"))) || // Any Claude Opus is reasoning
     // Gemini
     lowerId.includes("gemini-1.5-pro") ||
     (lowerId.includes("gemini-2") && lowerId.includes("pro")) ||
@@ -136,7 +133,9 @@ function resolveModelCapabilities(
     // OpenAI
     lowerId.includes("dall-e") ||
     (lowerId.includes("gpt-4o") && !lowerId.includes("mini")) || // GPT-4o is omni model, but mini is text/vision only
-    (lowerId.includes("gpt-4.1") && !lowerId.includes("mini") && !lowerId.includes("nano")) ||
+    (lowerId.includes("gpt-4.1") &&
+      !lowerId.includes("mini") &&
+      !lowerId.includes("nano")) ||
     lowerId.includes("gpt-5") || // Assume GPT-5 is omni
     // Gemini
     lowerId.includes("gemini-1.5") || // Gemini is multimodal (often includes imagen)
@@ -201,17 +200,15 @@ function resolveModelCapabilities(
     lowerId.includes("gpt-4-turbo") ||
     lowerId.includes("o4") ||
     // Anthropic
-    (lowerId.includes("claude") && (
-      lowerId.includes("3") ||
-      lowerId.includes("4") ||
-      lowerId.includes("5") ||
-      lowerId.includes("v3") ||
-      lowerId.includes("v4")
-    ))
+    (lowerId.includes("claude") &&
+      (lowerId.includes("3") ||
+        lowerId.includes("4") ||
+        lowerId.includes("5") ||
+        lowerId.includes("v3") ||
+        lowerId.includes("v4")))
   ) {
     capabilities.push("docs");
   }
-
 
   return capabilities;
 }

@@ -253,7 +253,9 @@ export function ModelSelector({
                             <TooltipTrigger asChild>
                               <FileText className="size-3.5 text-muted-foreground" />
                             </TooltipTrigger>
-                            <TooltipContent>Large Context / Documents</TooltipContent>
+                            <TooltipContent>
+                              Large Context / Documents
+                            </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       )}
