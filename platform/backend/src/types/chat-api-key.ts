@@ -14,7 +14,7 @@ export const SupportedChatProviderSchema = z.enum([
   "gemini",
   "vllm",
   "ollama",
-]);
+]).or(z.string());
 export type SupportedChatProvider = z.infer<typeof SupportedChatProviderSchema>;
 
 // Chat API Key scope

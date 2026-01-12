@@ -32,3 +32,13 @@ export const providerDisplayNames: Record<SupportedProvider, string> = {
   vllm: "vLLM",
   ollama: "Ollama",
 };
+
+export const ModelCapabilitySchema = z.enum([
+  "vision",
+  "reasoning",
+  "image_generation",
+  "fast",
+  "docs",
+]);
+
+export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
