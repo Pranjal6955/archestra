@@ -368,7 +368,7 @@ export function ChatApiKeySelector({
 
 function ProviderIcon({ src }: { src?: string }) {
   if (!src) {
-    return null;
+    return <Key className="h-4 w-4" />;
   }
   return (
     <Image
