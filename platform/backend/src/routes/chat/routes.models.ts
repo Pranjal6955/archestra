@@ -80,6 +80,9 @@ function resolveModelCapabilities(
     lowerId.includes("gemini-2") ||
     lowerId.includes("gemini-flash") ||
     lowerId.includes("gemini-1.0-pro-vision") ||
+    lowerId.includes("robotics") ||
+    lowerId.includes("computer-use") ||
+    lowerId.includes("computer use") ||
     lowerId.includes("gemma") || // Gemma 3 is multimodal
     // Llava / local vision models commonly used
     lowerId.includes("llava") ||
@@ -120,6 +123,8 @@ function resolveModelCapabilities(
     // Gemini
     lowerId.includes("gemini-1.5-pro") ||
     (lowerId.includes("gemini-2") && lowerId.includes("pro")) ||
+    lowerId.includes("deep-research") ||
+    lowerId.includes("deep research") ||
     // Generic reasoning keyword
     lowerId.includes("reasoning")
   ) {
@@ -170,7 +175,9 @@ function resolveModelCapabilities(
     lowerId.includes("o4-mini") ||
     lowerId.includes("realtime") ||
     lowerId.includes("davinci") ||
-    lowerId.includes("babbage")
+    lowerId.includes("babbage") ||
+    lowerId.includes("banana") ||
+    lowerId.includes("nano")
   ) {
     capabilities.push("fast");
   }
@@ -181,6 +188,12 @@ function resolveModelCapabilities(
     // Gemini (native long context & multimodal)
     lowerId.includes("gemini") ||
     lowerId.includes("gemma") ||
+    lowerId.includes("banana") ||
+    lowerId.includes("robotics") ||
+    lowerId.includes("computer-use") ||
+    lowerId.includes("computer use") ||
+    lowerId.includes("deep-research") ||
+    lowerId.includes("deep research") ||
     // OpenAI (vision/file support)
     lowerId.includes("gpt-4o") ||
     lowerId.includes("gpt-4.1") ||
@@ -299,7 +312,14 @@ export function mapOpenAiModelToModelInfo(
     // then we need to determine the provider based on the model id (falling back to default openai)
     if (model.id.includes("claude")) {
       provider = "anthropic";
-    } else if (model.id.includes("gemini") || model.id.includes("gemma")) {
+    } else if (
+      model.id.includes("gemini") ||
+      model.id.includes("gemma") ||
+      model.id.includes("banana") ||
+      model.id.includes("robotics") ||
+      model.id.includes("computer-use") ||
+      model.id.includes("deep-research")
+    ) {
       provider = "gemini";
     }
   }
