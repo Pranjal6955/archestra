@@ -177,7 +177,14 @@ export function ChatApiKeyForm({
   // Check if API key has been changed from placeholder
   const hasApiKeyChanged = apiKey !== PLACEHOLDER_KEY && apiKey !== "";
 
-  const providerConfig = PROVIDER_CONFIG[provider];
+  const providerConfig = PROVIDER_CONFIG[provider] ?? {
+    name: provider || "Unknown",
+    icon: "", // Fallback
+    placeholder: "API Key",
+    enabled: false,
+    consoleUrl: "",
+    consoleName: "Console",
+  };
 
   // Determine if we should show the "configured" styling
   const showConfiguredStyling = isEditMode && !hasApiKeyChanged;

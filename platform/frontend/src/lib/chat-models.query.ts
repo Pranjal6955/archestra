@@ -1,4 +1,8 @@
-import { archestraApiSdk, type SupportedProvider } from "@shared";
+import {
+  archestraApiSdk,
+  type ModelCapability,
+  type SupportedProvider,
+} from "@shared";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
@@ -8,6 +12,7 @@ export interface ChatModel {
   id: string;
   displayName: string;
   provider: SupportedProvider;
+  capabilities: ModelCapability[];
   createdAt?: string;
 }
 

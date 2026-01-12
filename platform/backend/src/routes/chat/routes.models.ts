@@ -3,6 +3,8 @@ import {
   type SupportedProvider,
   SupportedProviders,
   TimeInMs,
+  type ModelCapability,
+  ModelCapabilitySchema,
 } from "@shared";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { uniqBy } from "lodash-es";
@@ -33,6 +35,7 @@ const ChatModelSchema = z.object({
   id: z.string(),
   displayName: z.string(),
   provider: SupportedChatProviderSchema,
+  capabilities: z.array(ModelCapabilitySchema).default([]),
   createdAt: z.string().optional(),
 });
 
@@ -40,7 +43,177 @@ export interface ModelInfo {
   id: string;
   displayName: string;
   provider: SupportedProvider;
+  capabilities: ModelCapability[];
   createdAt?: string;
+}
+
+/**
+ * Resolve capabilities for a model based on its ID and provider
+ */
+function resolveModelCapabilities(
+  provider: SupportedProvider,
+  modelId: string,
+): ModelCapability[] {
+  const capabilities: ModelCapability[] = [];
+  const lowerId = modelId.toLowerCase();
+
+  // Vision capability
+  if (
+    // OpenAI
+    lowerId.includes("gpt-4o") ||
+    lowerId.includes("gpt-4.1") ||
+    lowerId.includes("gpt-4-turbo") ||
+    lowerId.includes("gpt-4-vision") ||
+    lowerId.includes("gpt-5") ||
+    lowerId.includes("o4") ||
+    lowerId.includes("omni-moderation") ||
+    // Anthropic
+    (lowerId.includes("claude") && (
+      lowerId.includes("3") ||
+      lowerId.includes("4") ||
+      lowerId.includes("5") ||
+      lowerId.includes("v3") ||
+      lowerId.includes("v4")
+    )) ||
+    // Gemini
+    lowerId.includes("gemini-1.5") ||
+    lowerId.includes("gemini-2") ||
+    lowerId.includes("gemini-flash") ||
+    lowerId.includes("gemini-1.0-pro-vision") ||
+    lowerId.includes("robotics") ||
+    lowerId.includes("computer-use") ||
+    lowerId.includes("computer use") ||
+    lowerId.includes("gemma") || // Gemma 3 is multimodal
+    // Llava / local vision models commonly used
+    lowerId.includes("llava") ||
+    lowerId.includes("vision") ||
+    lowerId.includes("pixtral")
+  ) {
+    capabilities.push("vision");
+  }
+
+  // Reasoning capability
+  // We include highly capable certified "reasoning" models like o1,
+  // but also general smart models if they are top-tier to match user expectations (e.g. GPT-4o)
+  if (
+    // OpenAI
+    lowerId.includes("o1") ||
+    lowerId.startsWith("o3") || // Matches o3, o3-mini, etc.
+    lowerId.includes("o4") ||
+    lowerId.includes("gpt-4o") || // GPT-4o is often considered to have high reasoning capabilities
+    lowerId.includes("gpt-4.1") ||
+    lowerId.includes("gpt-5") || // Assume GPT-5 has high reasoning
+    // DeepSeek
+    lowerId.includes("deepseek-r1") ||
+    // Anthropic
+    (lowerId.includes("claude") && (
+      lowerId.includes("opus") ||
+      lowerId.includes("sonnet") ||
+      lowerId.includes("4") ||
+      lowerId.includes("5")
+    ) && (
+        lowerId.includes("3.5") ||
+        lowerId.includes("3-5") ||
+        lowerId.includes("3.7") ||
+        lowerId.includes("3-7") ||
+        lowerId.includes("4") ||
+        lowerId.includes("5") ||
+        lowerId.includes("opus") // Any Claude Opus is reasoning
+      )) ||
+    // Gemini
+    lowerId.includes("gemini-1.5-pro") ||
+    (lowerId.includes("gemini-2") && lowerId.includes("pro")) ||
+    lowerId.includes("deep-research") ||
+    lowerId.includes("deep research") ||
+    // Generic reasoning keyword
+    lowerId.includes("reasoning")
+  ) {
+    capabilities.push("reasoning");
+  }
+
+  // Image Generation capability
+  if (
+    // OpenAI
+    lowerId.includes("dall-e") ||
+    (lowerId.includes("gpt-4o") && !lowerId.includes("mini")) || // GPT-4o is omni model, but mini is text/vision only
+    (lowerId.includes("gpt-4.1") && !lowerId.includes("mini") && !lowerId.includes("nano")) ||
+    lowerId.includes("gpt-5") || // Assume GPT-5 is omni
+    // Gemini
+    lowerId.includes("gemini-1.5") || // Gemini is multimodal (often includes imagen)
+    lowerId.includes("gemini-2") ||
+    // Stability / Flux
+    lowerId.includes("stable-diffusion") ||
+    lowerId.includes("flux") ||
+    lowerId.includes("image-gen") ||
+    lowerId.includes("imagen")
+  ) {
+    capabilities.push("image_generation");
+  }
+
+  // Fast capability (Speed prioritized models)
+  if (
+    // OpenAI
+    lowerId.includes("gpt-4o-mini") ||
+    lowerId.includes("gpt-4.1-mini") ||
+    lowerId.includes("gpt-4.1-nano") ||
+    lowerId.includes("gpt-3.5") ||
+    // Gemini
+    lowerId.includes("flash") ||
+    lowerId.includes("lite") ||
+    lowerId.includes("gemma") ||
+    // Anthropic
+    lowerId.includes("haiku") ||
+    // Meta / Open Source
+    lowerId.includes("llama-3-70b") ||
+    lowerId.includes("llama-3-8b") ||
+    lowerId.includes("mixtral") ||
+    lowerId.includes("groq") ||
+    // Generic terms
+    lowerId.includes("turbo") ||
+    lowerId.includes("fast") ||
+    lowerId.includes("o1-mini") ||
+    lowerId.includes("o4-mini") ||
+    lowerId.includes("realtime") ||
+    lowerId.includes("davinci") ||
+    lowerId.includes("babbage") ||
+    lowerId.includes("banana") ||
+    lowerId.includes("nano")
+  ) {
+    capabilities.push("fast");
+  }
+
+  // Document / PDF Input capability
+  // Models with large context windows or native file support
+  if (
+    // Gemini (native long context & multimodal)
+    lowerId.includes("gemini") ||
+    lowerId.includes("gemma") ||
+    lowerId.includes("banana") ||
+    lowerId.includes("robotics") ||
+    lowerId.includes("computer-use") ||
+    lowerId.includes("computer use") ||
+    lowerId.includes("deep-research") ||
+    lowerId.includes("deep research") ||
+    // OpenAI (vision/file support)
+    lowerId.includes("gpt-4o") ||
+    lowerId.includes("gpt-4.1") ||
+    lowerId.includes("gpt-5") ||
+    lowerId.includes("gpt-4-turbo") ||
+    lowerId.includes("o4") ||
+    // Anthropic
+    (lowerId.includes("claude") && (
+      lowerId.includes("3") ||
+      lowerId.includes("4") ||
+      lowerId.includes("5") ||
+      lowerId.includes("v3") ||
+      lowerId.includes("v4")
+    ))
+  ) {
+    capabilities.push("docs");
+  }
+
+
+  return capabilities;
 }
 
 /**
@@ -75,6 +248,7 @@ async function fetchAnthropicModels(apiKey: string): Promise<ModelInfo[]> {
     id: model.id,
     displayName: model.display_name,
     provider: "anthropic" as const,
+    capabilities: resolveModelCapabilities("anthropic", model.id),
     createdAt: model.created_at,
   }));
 }
@@ -136,9 +310,16 @@ export function mapOpenAiModelToModelInfo(
   // but if it's an orlando model (we identify that by missing owned_by property)
   if (!("owned_by" in model)) {
     // then we need to determine the provider based on the model id (falling back to default openai)
-    if (model.id.startsWith("claude-")) {
+    if (model.id.includes("claude")) {
       provider = "anthropic";
-    } else if (model.id.startsWith("gemini-")) {
+    } else if (
+      model.id.includes("gemini") ||
+      model.id.includes("gemma") ||
+      model.id.includes("banana") ||
+      model.id.includes("robotics") ||
+      model.id.includes("computer-use") ||
+      model.id.includes("deep-research")
+    ) {
       provider = "gemini";
     }
   }
@@ -147,6 +328,7 @@ export function mapOpenAiModelToModelInfo(
     id: model.id,
     displayName: "name" in model ? model.name : model.id,
     provider,
+    capabilities: resolveModelCapabilities(provider, model.id),
     createdAt:
       "created" in model
         ? new Date(model.created * 1000).toISOString()
@@ -189,6 +371,7 @@ export async function fetchGeminiModels(apiKey: string): Promise<ModelInfo[]> {
         id: modelId,
         displayName: model.displayName ?? modelId,
         provider: "gemini" as const,
+        capabilities: resolveModelCapabilities("gemini", modelId),
       };
     });
 }
@@ -234,6 +417,7 @@ async function fetchVllmModels(apiKey: string): Promise<ModelInfo[]> {
     id: model.id,
     displayName: model.id,
     provider: "vllm" as const,
+    capabilities: resolveModelCapabilities("vllm", model.id),
     createdAt: model.created
       ? new Date(model.created * 1000).toISOString()
       : undefined,
@@ -279,6 +463,7 @@ async function fetchOllamaModels(apiKey: string): Promise<ModelInfo[]> {
     id: model.id,
     displayName: model.id,
     provider: "ollama" as const,
+    capabilities: resolveModelCapabilities("ollama", model.id),
     createdAt: model.created
       ? new Date(model.created * 1000).toISOString()
       : undefined,
@@ -344,6 +529,7 @@ export async function fetchGeminiModelsViaVertexAi(): Promise<ModelInfo[]> {
       id: modelId,
       displayName,
       provider: "gemini" as const,
+      capabilities: resolveModelCapabilities("gemini", modelId),
     });
   }
 

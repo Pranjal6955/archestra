@@ -71,13 +71,16 @@ describe("chat-models", () => {
           id: "gemini-2.5-pro",
           displayName: "Gemini 2.5 Pro",
           provider: "gemini",
+          capabilities: ["vision", "reasoning", "image_generation", "docs"],
         },
         {
           id: "gemini-2.5-flash",
           displayName: "Gemini 2.5 Flash",
           provider: "gemini",
+          capabilities: ["vision", "image_generation", "fast", "docs"],
         },
       ]);
+
 
       // Verify fetch was called with correct URL
       expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -157,27 +160,27 @@ describe("chat-models", () => {
         version: string;
         tunedModelInfo: Record<string, unknown>;
       }> = [
-        {
-          name: "publishers/google/models/gemini-2.5-pro",
-          version: "default",
-          tunedModelInfo: {},
-        },
-        {
-          name: "publishers/google/models/gemini-2.5-flash",
-          version: "default",
-          tunedModelInfo: {},
-        },
-        {
-          name: "publishers/google/models/gemini-embedding-001",
-          version: "default",
-          tunedModelInfo: {},
-        },
-        {
-          name: "publishers/google/models/imageclassification-efficientnet",
-          version: "001",
-          tunedModelInfo: {},
-        },
-      ];
+          {
+            name: "publishers/google/models/gemini-2.5-pro",
+            version: "default",
+            tunedModelInfo: {},
+          },
+          {
+            name: "publishers/google/models/gemini-2.5-flash",
+            version: "default",
+            tunedModelInfo: {},
+          },
+          {
+            name: "publishers/google/models/gemini-embedding-001",
+            version: "default",
+            tunedModelInfo: {},
+          },
+          {
+            name: "publishers/google/models/imageclassification-efficientnet",
+            version: "001",
+            tunedModelInfo: {},
+          },
+        ];
 
       // Create async iterator from mock models
       const mockPager = {
@@ -207,11 +210,13 @@ describe("chat-models", () => {
           id: "gemini-2.5-pro",
           displayName: "Gemini 2.5 Pro",
           provider: "gemini",
+          capabilities: ["vision", "reasoning", "image_generation", "docs"],
         },
         {
           id: "gemini-2.5-flash",
           displayName: "Gemini 2.5 Flash",
           provider: "gemini",
+          capabilities: ["vision", "image_generation", "fast", "docs"],
         },
       ]);
 
@@ -369,6 +374,80 @@ describe("chat-models", () => {
           displayName: "gpt-4o",
           provider: "openai",
           createdAt: new Date(1715367049 * 1000).toISOString(),
+          capabilities: ["vision", "reasoning", "image_generation", "docs"],
+        });
+      });
+
+      test("maps OpenAI mini model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "gpt-4o-mini",
+          created: 1715367049,
+          object: "model",
+          owned_by: "openai",
+        });
+
+        expect(result).toEqual({
+          id: "gpt-4o-mini",
+          displayName: "gpt-4o-mini",
+          provider: "openai",
+          createdAt: new Date(1715367049 * 1000).toISOString(),
+          // Should include fast, vision, pdf_input, reasoning but NOT image_generation
+          capabilities: ["vision", "reasoning", "fast", "docs"],
+        });
+      });
+
+      test("maps OpenAI nano model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "gpt-4.1-nano",
+          created: 1715367049,
+          object: "model",
+          owned_by: "openai",
+        });
+
+        expect(result).toEqual({
+          id: "gpt-4.1-nano",
+          displayName: "gpt-4.1-nano",
+          provider: "openai",
+          createdAt: new Date(1715367049 * 1000).toISOString(),
+          // Note: nano might not have image_generation or docs (docs is restricted to gpt-4o/4.1 in logic)
+          // Wait, gpt-4.1 IS in docs check.
+          // image_gen excludes nano.
+          capabilities: ["vision", "reasoning", "fast", "docs"],
+        });
+      });
+
+      test("maps OpenAI realtime model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "gpt-realtime-mini",
+          created: 1715367049,
+          object: "model",
+          owned_by: "openai",
+        });
+
+        expect(result).toEqual({
+          id: "gpt-realtime-mini",
+          displayName: "gpt-realtime-mini",
+          provider: "openai",
+          createdAt: new Date(1715367049 * 1000).toISOString(),
+          // Should include fast due to "realtime" keyword
+          capabilities: ["fast"],
+        });
+      });
+
+      test("maps OpenAI legacy model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "davinci-002",
+          created: 1715367049,
+          object: "model",
+          owned_by: "openai",
+        });
+
+        expect(result).toEqual({
+          id: "davinci-002",
+          displayName: "davinci-002",
+          provider: "openai",
+          createdAt: new Date(1715367049 * 1000).toISOString(),
+          capabilities: ["fast"],
         });
       });
     });
@@ -385,10 +464,41 @@ describe("chat-models", () => {
           displayName: "claude-3-5-sonnet",
           provider: "anthropic",
           createdAt: undefined,
+          capabilities: ["vision", "reasoning", "docs"],
         });
       });
 
-      test("maps Gemini model with gemini provider", () => {
+      test("maps Claude 4.5 Opus model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "claude-4.5-opus",
+          name: "Claude Opus 4.5",
+        });
+
+        expect(result).toEqual({
+          id: "claude-4.5-opus",
+          displayName: "Claude Opus 4.5",
+          provider: "anthropic",
+          createdAt: undefined,
+          capabilities: ["vision", "reasoning", "docs"],
+        });
+      });
+
+      test("maps Claude 3.7 Sonnet model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "anthropic/claude-3.7-sonnet",
+          name: "Claude Sonnet 3.7",
+        });
+
+        expect(result).toEqual({
+          id: "anthropic/claude-3.7-sonnet",
+          displayName: "Claude Sonnet 3.7",
+          provider: "anthropic",
+          createdAt: undefined,
+          capabilities: ["vision", "reasoning", "docs"],
+        });
+      });
+
+      test("maps Gemini 2.5 Pro model", () => {
         const result = mapOpenAiModelToModelInfo({
           id: "gemini-2.5-pro",
           name: "gemini-2.5-pro",
@@ -399,6 +509,97 @@ describe("chat-models", () => {
           displayName: "gemini-2.5-pro",
           provider: "gemini",
           createdAt: undefined,
+          capabilities: ["vision", "reasoning", "image_generation", "docs"],
+        });
+      });
+
+      test("maps Gemma 3 model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "gemma-3-27b",
+          name: "Gemma 3 27B",
+        });
+
+        expect(result).toEqual({
+          id: "gemma-3-27b",
+          displayName: "Gemma 3 27B",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["vision", "fast", "docs"],
+        });
+      });
+
+      test("maps Gemini Flash-Lite model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "gemini-2.0-flash-lite-preview-01-21",
+          name: "Gemini 2.0 Flash-Lite Preview",
+        });
+
+        expect(result).toEqual({
+          id: "gemini-2.0-flash-lite-preview-01-21",
+          displayName: "Gemini 2.0 Flash-Lite Preview",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["vision", "image_generation", "fast", "docs"],
+        });
+      });
+
+      test("maps Nano Banana Pro model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "nano-banana-pro",
+          name: "Nano Banana Pro",
+        });
+
+        expect(result).toEqual({
+          id: "nano-banana-pro",
+          displayName: "Nano Banana Pro",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["fast", "docs"],
+        });
+      });
+
+      test("maps Gemini Robotics model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "gemini-robotics-er-1.5",
+          name: "Gemini Robotics-ER 1.5 Preview",
+        });
+
+        expect(result).toEqual({
+          id: "gemini-robotics-er-1.5",
+          displayName: "Gemini Robotics-ER 1.5 Preview",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["vision", "docs"],
+        });
+      });
+
+      test("maps Computer Use model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "gemini-2.5-computer-use-10-2025",
+          name: "Gemini 2.5 Computer Use Preview",
+        });
+
+        expect(result).toEqual({
+          id: "gemini-2.5-computer-use-10-2025",
+          displayName: "Gemini 2.5 Computer Use Preview",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["vision", "image_generation", "docs"],
+        });
+      });
+
+      test("maps Deep Research model", () => {
+        const result = mapOpenAiModelToModelInfo({
+          id: "deep-research-pro-preview",
+          name: "Deep Research Pro Preview",
+        });
+
+        expect(result).toEqual({
+          id: "deep-research-pro-preview",
+          displayName: "Deep Research Pro Preview",
+          provider: "gemini",
+          createdAt: undefined,
+          capabilities: ["reasoning", "docs"],
         });
       });
 
@@ -413,6 +614,7 @@ describe("chat-models", () => {
           displayName: "gpt-5",
           provider: "openai",
           createdAt: undefined,
+          capabilities: ["vision", "reasoning", "image_generation", "docs"],
         });
       });
     });
