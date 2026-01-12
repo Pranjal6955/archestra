@@ -65,7 +65,7 @@ function resolveModelCapabilities(
     lowerId.includes("gpt-4-turbo") ||
     lowerId.includes("gpt-4-vision") ||
     lowerId.includes("gpt-5") ||
-    lowerId.includes("o4") ||
+    lowerId.includes("o4-") || lowerId.endsWith("/o4") || lowerId === "o4" ||
     lowerId.includes("omni-moderation") ||
     // Anthropic
     (lowerId.includes("claude") &&
@@ -79,9 +79,9 @@ function resolveModelCapabilities(
     lowerId.includes("gemini-2") ||
     lowerId.includes("gemini-flash") ||
     lowerId.includes("gemini-1.0-pro-vision") ||
-    lowerId.includes("robotics") ||
-    lowerId.includes("computer-use") ||
-    lowerId.includes("computer use") ||
+    lowerId.includes("gemini-robotics") ||
+    lowerId.includes("gemini-computer-use") ||
+    lowerId.includes("gemini computer use") ||
     lowerId.includes("gemma") || // Gemma 3 is multimodal
     // Llava / local vision models commonly used
     lowerId.includes("llava") ||
@@ -96,9 +96,9 @@ function resolveModelCapabilities(
   // but also general smart models if they are top-tier to match user expectations (e.g. GPT-4o)
   if (
     // OpenAI
-    lowerId.includes("o1") ||
-    lowerId.startsWith("o3") || // Matches o3, o3-mini, etc.
-    lowerId.includes("o4") ||
+    lowerId.includes("o1-") || lowerId.endsWith("/o1") || lowerId === "o1" ||
+    lowerId.includes("o3-") || lowerId.endsWith("/o3") || lowerId === "o3" ||
+    lowerId.includes("o4-") || lowerId.endsWith("/o4") || lowerId === "o4" ||
     lowerId.includes("gpt-4o") || // GPT-4o is often considered to have high reasoning capabilities
     lowerId.includes("gpt-4.1") ||
     lowerId.includes("gpt-5") || // Assume GPT-5 has high reasoning
@@ -120,8 +120,8 @@ function resolveModelCapabilities(
     // Gemini
     lowerId.includes("gemini-1.5-pro") ||
     (lowerId.includes("gemini-2") && lowerId.includes("pro")) ||
-    lowerId.includes("deep-research") ||
-    lowerId.includes("deep research") ||
+    lowerId.includes("gemini-deep-research") ||
+    lowerId.includes("deep-research-pro") ||
     // Generic reasoning keyword
     lowerId.includes("reasoning")
   ) {
@@ -175,7 +175,7 @@ function resolveModelCapabilities(
     lowerId.includes("realtime") ||
     lowerId.includes("davinci") ||
     lowerId.includes("babbage") ||
-    lowerId.includes("banana") ||
+    lowerId.includes("nano-banana-pro") ||
     lowerId.includes("nano")
   ) {
     capabilities.push("fast");
@@ -187,18 +187,18 @@ function resolveModelCapabilities(
     // Gemini (native long context & multimodal)
     lowerId.includes("gemini") ||
     lowerId.includes("gemma") ||
-    lowerId.includes("banana") ||
-    lowerId.includes("robotics") ||
-    lowerId.includes("computer-use") ||
-    lowerId.includes("computer use") ||
-    lowerId.includes("deep-research") ||
-    lowerId.includes("deep research") ||
+    lowerId.includes("nano-banana-pro") ||
+    lowerId.includes("gemini-robotics") ||
+    lowerId.includes("gemini-computer-use") ||
+    lowerId.includes("gemini computer use") ||
+    lowerId.includes("gemini-deep-research") ||
+    lowerId.includes("deep-research-pro") ||
     // OpenAI (vision/file support)
     lowerId.includes("gpt-4o") ||
     lowerId.includes("gpt-4.1") ||
     lowerId.includes("gpt-5") ||
     lowerId.includes("gpt-4-turbo") ||
-    lowerId.includes("o4") ||
+    lowerId.includes("o4-") || lowerId.endsWith("/o4") || lowerId === "o4" ||
     // Anthropic
     (lowerId.includes("claude") &&
       (lowerId.includes("3") ||
@@ -306,16 +306,25 @@ export function mapOpenAiModelToModelInfo(
   let provider: SupportedProvider = "openai";
   // but if it's an orlando model (we identify that by missing owned_by property)
   if (!("owned_by" in model)) {
+    const lowerId = model.id.toLowerCase();
     // then we need to determine the provider based on the model id (falling back to default openai)
-    if (model.id.includes("claude")) {
+    if (
+      lowerId.includes("claude-") ||
+      lowerId.endsWith("/claude") ||
+      lowerId === "claude"
+    ) {
       provider = "anthropic";
     } else if (
-      model.id.includes("gemini") ||
-      model.id.includes("gemma") ||
-      model.id.includes("banana") ||
-      model.id.includes("robotics") ||
-      model.id.includes("computer-use") ||
-      model.id.includes("deep-research")
+      lowerId.includes("gemini-") ||
+      lowerId.endsWith("/gemini") ||
+      lowerId === "gemini" ||
+      lowerId.includes("gemma-") ||
+      lowerId.endsWith("/gemma") ||
+      lowerId === "gemma" ||
+      lowerId.includes("nano-banana-pro") ||
+      lowerId.includes("gemini-robotics") ||
+      lowerId.includes("gemini-computer-use") ||
+      lowerId.includes("deep-research-pro")
     ) {
       provider = "gemini";
     }

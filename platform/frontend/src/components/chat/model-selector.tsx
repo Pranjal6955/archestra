@@ -36,7 +36,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useModelsByProvider } from "@/lib/chat-models.query";
@@ -208,56 +207,46 @@ export function ModelSelector({
                     <ModelSelectorName>{model.displayName}</ModelSelectorName>
                     <div className="flex items-center gap-1.5 ml-2">
                       {model.capabilities.includes("vision") && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Eye className="size-3.5 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>Vision Capable</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Eye className="size-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>Vision Capable</TooltipContent>
+                        </Tooltip>
                       )}
                       {model.capabilities.includes("reasoning") && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Brain className="size-3.5 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>Advanced Reasoning</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Brain className="size-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>Advanced Reasoning</TooltipContent>
+                        </Tooltip>
                       )}
                       {model.capabilities.includes("image_generation") && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <ImageIcon className="size-3.5 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>Image Generation</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <ImageIcon className="size-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>Image Generation</TooltipContent>
+                        </Tooltip>
                       )}
                       {model.capabilities.includes("fast") && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Zap className="size-3.5 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>Fast / Low Latency</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Zap className="size-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>Fast / Low Latency</TooltipContent>
+                        </Tooltip>
                       )}
                       {model.capabilities.includes("docs") && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <FileText className="size-3.5 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Large Context / Documents
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FileText className="size-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Large Context / Documents
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                     {selectedModel === model.id ? (
