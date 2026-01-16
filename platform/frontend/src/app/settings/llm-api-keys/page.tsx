@@ -24,6 +24,7 @@ import {
   PLACEHOLDER_KEY,
   PROVIDER_CONFIG,
 } from "@/components/chat-api-key-form";
+import { EnvVarKeysAlert } from "@/components/env-var-keys-alert";
 import { GeminiVertexAiAlert } from "@/components/gemini-vertex-ai-alert";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +53,7 @@ import {
   useDeleteChatApiKey,
   useUpdateChatApiKey,
 } from "@/lib/chat-settings.query";
-import { useFeatureFlag } from "@/lib/features.hook";
+import { useFeatureFlag, useFeatureValue } from "@/lib/features.hook";
 
 const SCOPE_ICONS: Record<ChatApiKeyScope, React.ReactNode> = {
   personal: <User className="h-3 w-3" />,
@@ -77,6 +78,8 @@ function ChatSettingsContent() {
   const deleteMutation = useDeleteChatApiKey();
   const byosEnabled = useFeatureFlag("byosEnabled");
   const geminiVertexAiEnabled = useFeatureFlag("geminiVertexAiEnabled");
+  // @ts-ignore - configuredEnvChatProviders is added in backend but types might be stale
+  const envVarProviders = useFeatureValue("configuredEnvChatProviders" as any) as string[] | null;
 
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -392,6 +395,9 @@ function ChatSettingsContent() {
         )}
 
       {geminiVertexAiEnabled && <GeminiVertexAiAlert variant="full" />}
+      {envVarProviders && envVarProviders.length > 0 && (
+        <EnvVarKeysAlert providers={envVarProviders} />
+      )}
 
       <div data-testid={E2eTestId.ChatApiKeysTable}>
         <DataTable

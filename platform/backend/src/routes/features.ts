@@ -38,6 +38,8 @@ const featuresRoutes: FastifyPluginAsyncZod = async (fastify) => {
             globalToolPolicy: z.enum(["permissive", "restrictive"]),
             /** Browser streaming - enables live browser automation via Playwright MCP */
             browserStreamingEnabled: z.boolean(),
+            /** List of chat providers configured via environment variables */
+            configuredEnvChatProviders: z.array(z.string()),
             /** Incoming email - allows agents to be invoked via email */
             incomingEmail: z.object({
               enabled: z.boolean(),
@@ -55,6 +57,17 @@ const featuresRoutes: FastifyPluginAsyncZod = async (fastify) => {
       const globalToolPolicy: GlobalToolPolicy =
         org?.globalToolPolicy ?? "permissive";
 
+      // Check which chat providers are configured via env vars
+      const configuredEnvChatProviders = [
+        config.chat.anthropic.apiKey ? "anthropic" : null,
+        config.chat.openai.apiKey ? "openai" : null,
+        config.chat.gemini.apiKey ? "gemini" : null,
+        config.chat.cerebras.apiKey ? "cerebras" : null,
+        config.chat.vllm.apiKey ? "vllm" : null,
+        config.chat.ollama.apiKey ? "ollama" : null,
+        config.chat.zhipuai.apiKey ? "zhipuai" : null,
+      ].filter((p): p is string => p !== null);
+
       return reply.send({
         ...config.features,
         "orchestrator-k8s-runtime": McpServerRuntimeManager.isEnabled,
@@ -64,6 +77,7 @@ const featuresRoutes: FastifyPluginAsyncZod = async (fastify) => {
         vllmEnabled: config.llm.vllm.enabled,
         ollamaEnabled: config.llm.ollama.enabled,
         globalToolPolicy,
+        configuredEnvChatProviders,
         incomingEmail: getEmailProviderInfo(),
       });
     },
